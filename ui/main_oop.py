@@ -72,6 +72,9 @@ class ImageClassifierApp:
 
         if hasattr(self, 'pred_label'):
             self.pred_label.destroy()
+        if hasattr(self, 'desc_label'):
+            self.desc_label.destroy()
+        
         
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
@@ -84,7 +87,7 @@ class ImageClassifierApp:
         self.pred_canvas.grid(sticky=tk.NW, row=0, column=1, pady=(300,0), padx=(75,0))
         self.pred_canvas.create_image(0, 0, anchor=tk.NW, image=self.pred_photo)
 
-        self.pred_label = tk.Label(bg="#D9FFFF", text=f"{100 * np.max(prediction)//1} %", font=('Arial', 30, 'bold'))
+        self.pred_label = tk.Label(bg="#D9FFFF", text=f"{100 * np.max(prediction)//1} %", font=('Arial', 20, 'bold'))
         self.pred_label.grid(sticky=tk.NE ,row=0, column=1, pady=(400,0), padx=(0, 75))
 
         desc_label=Image.open('../components/description.png')
@@ -95,7 +98,7 @@ class ImageClassifierApp:
         self.desc_canvas.grid(sticky=tk.NW, row=0, column=1, pady=(400,0), padx=(75,0))
         self.desc_canvas.create_image(0, 0, anchor=tk.NW, image=self.desc_photo)
 
-        self.desc_label = tk.Label(bg="#D9FFFF", text=f"{predicted_class_label.upper()}", font=('Arial', 30, 'bold'))
+        self.desc_label = tk.Label(bg="#D9FFFF", text=f"{predicted_class_label.upper()}", font=('Arial', 20, 'bold'))
         self.desc_label.grid(sticky=tk.NW ,row=0, column=1, pady=(450,0), padx=(75, 0))
 
     def change_cursor(self, event):
