@@ -1,5 +1,6 @@
 image_model/
 text_model/
+text_model_v2/
 ui/dist/
 ui/build/
 ui/klasifikator.spec
