@@ -13,7 +13,7 @@ ctypes.windll.shcore.SetProcessDpiAwareness(True)
 script_directory = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_directory)
 class_names = ["lukostřelba", "baseball", "basketbal", "kulečník", "bmx", "bowling", "box", "jízda na býku", "roztleskávání", "curling", "šerm", "krasobruslení", "fotbal", "závody formule 1", "golf", "skok do výšky", "hokej", "dostihy", "hydroplánové závody", "judo", "motocyklové závody", "pole dance", "rugby", "skoky na lyžích", "snowboarding", "rychlobruslení", "surfování", "plavání", "stolní tenis", "tenis", "dráhové kolo", "volejbal", "vzpírání"]
-'''def load_model():
+def load_model():
     global model
     script_directory = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_directory)
@@ -21,7 +21,7 @@ class_names = ["lukostřelba", "baseball", "basketbal", "kulečník", "bmx", "bo
     model = tf.saved_model.load("../image_model/")
 
 load_model()
-'''
+
 def UploadAction(event):
     filename = filedialog.askopenfilename()
     print('Selected:', filename)
@@ -50,6 +50,13 @@ def classify_image(img_url):
     classify_image.klasifikace.grid(row=2, column=0)
     print("Jedná se o", predicted_class_label, "s pravděpodobností:", 100 * np.max(prediction)//1, "%")
 
+def change_cursor(event):
+    canvas.config(cursor="hand2")  # Change the cursor to a pointing hand when hovering
+    # You can change "hand2" to other cursor options like "arrow", "cross", "watch", etc.
+
+def restore_cursor(event):
+    canvas.config(cursor="")
+
 root = tk.Tk()
 root.title('Image Classification - Sport edition')
 root.resizable(True, True)
@@ -69,8 +76,10 @@ img=image.resize((296, 183))
 photo=ImageTk.PhotoImage(img)
 
 canvas = Canvas(bg="#D9FFFF", width=296, height=183, border=0, highlightthickness=0)
-canvas.grid(row=0, column=1)
+canvas.grid(sticky=N, row=0, column=1, pady=60)
 canvas.create_image(0, 0, anchor=NW, image=photo)
 canvas.bind("<Button-1>", UploadAction)
+canvas.bind("<Enter>", change_cursor)
+canvas.bind("<Leave>", restore_cursor)
 
 root.mainloop()
