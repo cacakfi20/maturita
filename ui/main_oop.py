@@ -42,7 +42,6 @@ class ImageClassifierApp:
         self.button_canvas.bind("<Leave>", self.restore_cursor)
 
         imageLogo=Image.open('../components/logo.png')
-        print(imageLogo.width, imageLogo.height)
         imgLogo=imageLogo.resize((169, 33))
         self.photoLogo=ImageTk.PhotoImage(imgLogo)
 
@@ -55,7 +54,6 @@ class ImageClassifierApp:
 
     def upload_action(self, event):
         filename = filedialog.askopenfilename()
-        print('Selected:', filename)
         sport_img = Image.open(filename)
         max_width = 850
         max_height = 600
@@ -96,7 +94,12 @@ class ImageClassifierApp:
         fig = matplotlib.figure.Figure(figsize=(2,2))
         fig.patch.set_facecolor('#D9FFFF')
         ax = fig.add_subplot(111)
-        ax.pie([100 * np.max(prediction)//1,100-100 * np.max(prediction)//1], colors=["green","#D9FFFF"], startangle=90) 
+        if 100 * np.max(prediction)//1 <= 30:
+            ax.pie([100 * np.max(prediction)//1,100-100 * np.max(prediction)//1], colors=["#ff6666","#D9FFFF"], startangle=90)   
+        if 100 * np.max(prediction)//1 > 30:
+            ax.pie([100 * np.max(prediction)//1,100-100 * np.max(prediction)//1], colors=["#e68541","#D9FFFF"], startangle=90)    
+        if 100 * np.max(prediction)//1 >= 70:
+            ax.pie([100 * np.max(prediction)//1,100-100 * np.max(prediction)//1], colors=["green","#D9FFFF"], startangle=90) 
         circle=matplotlib.patches.Circle((0,0), 0.8, color='#D9FFFF')
         ax.add_artist(circle)
         self.canvasChart = FigureCanvasTkAgg(fig, master=root,)
