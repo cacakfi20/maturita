@@ -5,6 +5,9 @@ import ctypes
 from PIL import ImageTk, Image
 import tensorflow as tf
 import numpy as np
+import matplotlib.figure
+import matplotlib.patches
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tensorflow.keras.preprocessing import image
 
 class ImageClassifierApp:
@@ -27,9 +30,9 @@ class ImageClassifierApp:
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
 
-        image=Image.open('../components/button.png')
-        img=image.resize((296, 183))
-        self.photo=ImageTk.PhotoImage(img)
+        imagebtn=Image.open('../components/button.png')
+        imgbtn=imagebtn.resize((296, 183))
+        self.photo=ImageTk.PhotoImage(imgbtn)
 
         self.button_canvas = tk.Canvas(bg="#D9FFFF", width=296, height=183, border=0, highlightthickness=0)
         self.button_canvas.grid(sticky=tk.N, row=0, column=1, pady=(60,0))
@@ -37,6 +40,18 @@ class ImageClassifierApp:
         self.button_canvas.bind("<Button-1>", self.upload_action)
         self.button_canvas.bind("<Enter>", self.change_cursor)
         self.button_canvas.bind("<Leave>", self.restore_cursor)
+
+        imageLogo=Image.open('../components/logo.png')
+        print(imageLogo.width, imageLogo.height)
+        imgLogo=imageLogo.resize((169, 33))
+        self.photoLogo=ImageTk.PhotoImage(imgLogo)
+
+        self.logo_canvas = tk.Canvas(bg="white", width=169, height=33, border=0, highlightthickness=0)
+        self.logo_canvas.grid(sticky=tk.SW, row=0, column=0, pady=(0,50), padx=(100,0))
+        self.logo_canvas.create_image(0, 0, anchor=tk.NW, image=self.photoLogo)
+
+        self.name_label = tk.Label(text="© 2023 Filip Cacák", bg="white", fg="#d6d6d6", font=('Arial', 16, 'bold'))
+        self.name_label.grid(sticky=tk.SW, row=0, column=0, pady=(0,50), padx=(290,0))
 
     def upload_action(self, event):
         filename = filedialog.askopenfilename()
@@ -75,9 +90,18 @@ class ImageClassifierApp:
         if hasattr(self, 'desc_label'):
             self.desc_label.destroy()
         
-        
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
+
+        fig = matplotlib.figure.Figure(figsize=(2,2))
+        fig.patch.set_facecolor('#D9FFFF')
+        ax = fig.add_subplot(111)
+        ax.pie([100 * np.max(prediction)//1,100-100 * np.max(prediction)//1], colors=["green","#D9FFFF"], startangle=90) 
+        circle=matplotlib.patches.Circle((0,0), 0.8, color='#D9FFFF')
+        ax.add_artist(circle)
+        self.canvasChart = FigureCanvasTkAgg(fig, master=root,)
+        self.canvasChart.get_tk_widget().grid(sticky=tk.NE ,row=0, column=1, pady=(352,0), padx=(0, 17))
+        self.canvasChart.draw()
 
         pred_label=Image.open('../components/prediction.png')
         pred_img=pred_label.resize((296, 90))
@@ -87,8 +111,8 @@ class ImageClassifierApp:
         self.pred_canvas.grid(sticky=tk.NW, row=0, column=1, pady=(300,0), padx=(75,0))
         self.pred_canvas.create_image(0, 0, anchor=tk.NW, image=self.pred_photo)
 
-        self.pred_label = tk.Label(bg="#D9FFFF", text=f"{100 * np.max(prediction)//1} %", font=('Arial', 20, 'bold'))
-        self.pred_label.grid(sticky=tk.NE ,row=0, column=1, pady=(400,0), padx=(0, 75))
+        self.pred_label = tk.Label(bg="#D9FFFF", text=f"{int(100 * np.max(prediction)//1)} %", font=('Arial', 20, 'bold'))
+        self.pred_label.grid(sticky=tk.NE ,row=0, column=1, pady=(432,0), padx=(0, 80))
 
         desc_label=Image.open('../components/description.png')
         desc_img=desc_label.resize((115, 33))
@@ -98,7 +122,7 @@ class ImageClassifierApp:
         self.desc_canvas.grid(sticky=tk.NW, row=0, column=1, pady=(400,0), padx=(75,0))
         self.desc_canvas.create_image(0, 0, anchor=tk.NW, image=self.desc_photo)
 
-        self.desc_label = tk.Label(bg="#D9FFFF", text=f"{predicted_class_label.upper()}", font=('Arial', 20, 'bold'))
+        self.desc_label = tk.Label(bg="#D9FFFF", text=predicted_class_label.upper(), font=('Arial', 15, 'bold'))
         self.desc_label.grid(sticky=tk.NW ,row=0, column=1, pady=(450,0), padx=(75, 0))
 
     def change_cursor(self, event):
