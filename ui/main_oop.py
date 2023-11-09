@@ -25,6 +25,7 @@ class ImageClassifierApp:
         os.chdir(script_directory)
         parser = ConfigParser()
         parser.read('../config.ini')
+
         self.primary_background = parser.get('options', 'primary_background')
         self.primary_foreground = parser.get('options', 'primary_foreground')
         self.secondary_background = parser.get('options', 'secondary_background')
@@ -38,6 +39,8 @@ class ImageClassifierApp:
         self.description_image = parser.get('options', 'description_image') 
         self.prediction_image = parser.get('options', 'prediction_image')
         self.toggle_menu_image = parser.get('options', 'toggle_menu_image')
+
+        self.language = parser.get('options', 'language')
 
     def create_image_ui(self):
         self.get_settings()
@@ -114,6 +117,9 @@ class ImageClassifierApp:
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
 
+        self.pieCanvas = tk.Canvas(bg=self.secondary_background, width=296, height=296, border=0, highlightthickness=0)
+        self.pieCanvas.grid(sticky=tk.NE, row=0, column=1, pady=(360,0), padx=(0, 27))
+
         fig = matplotlib.figure.Figure(figsize=(1.5,1.5))
         fig.patch.set_facecolor(self.secondary_background)
         ax = fig.add_subplot(111)
@@ -125,8 +131,8 @@ class ImageClassifierApp:
             ax.pie([100 * np.max(prediction)//1,100-100 * np.max(prediction)//1], colors=["#53af32",self.secondary_background], startangle=90) 
         circle=matplotlib.patches.Circle((0,0), 0.8, color=self.secondary_background)
         ax.add_artist(circle)
-        self.canvasChart = FigureCanvasTkAgg(fig, master=root,)
-        self.canvasChart.get_tk_widget().grid(sticky=tk.NE ,row=0, column=1, pady=(360,0), padx=(0, 27))
+        self.canvasChart = FigureCanvasTkAgg(fig, master=self.pieCanvas,)
+        self.canvasChart.get_tk_widget().grid(row=0, column=0, pady=(0,0), padx=(0, 0))
         self.canvasChart.draw()
 
         pred_label=Image.open(self.prediction_image)
@@ -137,8 +143,8 @@ class ImageClassifierApp:
         self.pred_canvas.grid(sticky=tk.NW, row=0, column=1, pady=(300,0), padx=(75,0))
         self.pred_canvas.create_image(0, 0, anchor=tk.NW, image=self.pred_photo)
 
-        self.pred_label = tk.Label(bg=self.secondary_background, fg=self.secondary_foreground, text=f"{int(100 * np.max(prediction)//1)} %", font=('Arial', 18, 'bold'))
-        self.pred_label.grid(sticky=tk.NE ,row=0, column=1, pady=(432,0), padx=(0, 80))
+        self.pred_label = tk.Label(self.pieCanvas, bg=self.secondary_background, fg=self.secondary_foreground, text=f"{int(100 * np.max(prediction)//1)}%", font=('Arial', 18, 'bold'))
+        self.pred_label.grid(row=0, column=0, pady=(0,0), padx=(0, 0))
 
         desc_label=Image.open(self.description_image)
         desc_img=desc_label.resize((115, 33))
@@ -182,13 +188,16 @@ class ImageClassifierApp:
         self.menu_btn_canvas.config(cursor="hand2")
 
     def toggle_menu(self, event):
-        items = ['Obrázková klasifikace', 'Textová klasifikace', 'Nastavení', 'Nápověda', 'O autorovi', 'O aplikaci']
+        if self.language == 'cz':
+            items = ['Obrázková klasifikace', 'Textová klasifikace', 'Nastavení', 'Nápověda', 'O autorovi', 'O aplikaci']
+        else:
+            items = ['Image classification', 'Text classification', 'Settings', 'Help', 'About the author', 'About the app']
         self.opened_menu = tk.Frame(self.root, bg=self.sidebar_background, width=250, height=800)
         self.opened_menu.grid(row=0, column=0, sticky=tk.W)
 
         self.opened_menu.grid_rowconfigure(0, weight=1)  # Keep the row at a fixed height
 
-        close_menu_image = Image.open('../components/close_menu.png')
+        close_menu_image = Image.open(self.close_menu_image)
         close_menu_img = close_menu_image.resize((50, 50))
         self.close_menu_photo = ImageTk.PhotoImage(close_menu_img)
 
@@ -213,7 +222,6 @@ class ImageClassifierApp:
 
             self.menu_item_labels.append(menu_item)
 
-    
     def close_menu(self, event):
         self.opened_menu.destroy()
         self.close_menu_btn_canvas.destroy()
@@ -225,17 +233,17 @@ class ImageClassifierApp:
         for child in root.winfo_children():
             child.destroy()
 
-        if ui_name == 'Obrázková klasifikace':
+        if ui_name == 'Obrázková klasifikace' or ui_name == 'Image classification':
             self.create_image_ui()
-        elif ui_name == 'Textová klasifikace':
+        elif ui_name == 'Textová klasifikace' or ui_name == 'Text classification':
             self.create_text_ui()
-        elif ui_name == 'O aplikaci':
+        elif ui_name == 'O aplikaci' or ui_name == 'About the app':
             self.create_about_ui()
-        elif ui_name == 'O autorovi':
+        elif ui_name == 'O autorovi' or ui_name == 'About the author':
             self.create_me_ui()
-        elif ui_name == 'Nápověda':
+        elif ui_name == 'Nápověda' or ui_name == 'Help':
             self.create_help_ui()
-        elif ui_name == 'Nastavení':
+        elif ui_name == 'Nastavení' or ui_name == 'Settings':
             self.create_settings_ui()
 
     def create_text_ui(self):
@@ -254,8 +262,21 @@ class ImageClassifierApp:
         lbl.grid(row=0, column=0)
     
     def create_about_ui(self):
-        self.class_names = ["lukostřelba", "baseball", "basketbal", "kulečník", "bmx", "bowling", "box", "jízda na býku", "roztleskávání", "curling", "šerm", "krasobruslení", "americký fotbal", "závody formule 1", "golf", "skok do výšky", "hokej", "dostihy", "závody hydroplánů", "judo", "motocyklové závody", "pole dance", "rugby", "skoky na lyžích", "snowboarding", "rychlobruslení", "surfování", "plavání", "stolní tenis", "tenis", "dráhové kolo", "volejbal", "vzpírání"]
-
+        if self.language == 'cz':
+            self.class_names = ["lukostřelba", "baseball", "basketbal", "kulečník", "bmx", "bowling", "box", "jízda na býku", "roztleskávání", "curling", "šerm", "krasobruslení", "americký fotbal", "závody formule 1", "golf", "skok do výšky", "hokej", "dostihy", "závody hydroplánů", "judo", "motocyklové závody", "pole dance", "rugby", "skoky na lyžích", "snowboarding", "rychlobruslení", "surfování", "plavání", "stolní tenis", "tenis", "dráhové kolo", "volejbal", "vzpírání"]
+            dic = [
+                'O aplikaci',
+                "SportSnapShot je aplikace vytvořená jako součást mého maturitního projektu, která využívá strojové učení pro klasifikaci sportů na základě obrázků a textových popisů. Aplikace vám umožní snadno a rychle zjistit, o jaký sport se jedná, a to jak na základě fotografií, tak i na základě textových popisů.",
+                "Modely jsou aktuálně schopny rozpoznat 33 sportů, které naleznete v pravé části této obrazovky. Přesnější dokumentaci k modelům najdete ve zdrojovém kódu aplikace, nebo v mé maturitní práci"
+            ]
+        else:
+            self.class_names = ["archery", "baseball", "basketball", "billiards", "bmx", "bowling", "boxing", "bull riding", "cheerleading", "curling", "fencing", "figure skating", "football", "formula 1", "golf", "high jump", "hockey", "horse racing", "hydroplane racing", "judo", "motorcycle racing", "pole dance", "rugby", "ski jumping", "snowboarding", "speed skating", "surfing", "swimming", "table tennis", "tennis", "track cycling", "volleyball", "weightlifting"]
+            dic = [
+                'About the app',
+                "SportSnapShot is an app created as part of my senior project that uses machine learning to classify sports based on images and text descriptions. The app allows you to easily and quickly find out what sport it is based on both photos and text descriptions.",
+                "The models are currently capable of recognising 33 sports, which can be found on the right-hand side of this screen. More precise documentation on the models can be found in the source code of the application or in my graduation thesis"
+            ]
+        
         self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1050, height=800)
         self.grey_frame.grid(row=0, column=0)
 
@@ -267,12 +288,12 @@ class ImageClassifierApp:
 
         self.create_toggle_menu()
 
-        lbl = tk.Label(text="O aplikaci", font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
+        lbl = tk.Label(text=dic[0], font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
         lbl.grid(row=0, column=0, sticky=tk.N, pady=(20,0))
 
-        text = tk.Label(fg=self.primary_foreground, text="SportSnapShot je aplikace vytvořená jako součást mého maturitního projektu, která využívá strojové učení pro klasifikaci sportů na základě obrázků a textových popisů. Aplikace vám umožní snadno a rychle zjistit, o jaký sport se jedná, a to jak na základě fotografií, tak i na základě textových popisů.", bg=self.primary_background, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
+        text = tk.Label(fg=self.primary_foreground, text=dic[1], bg=self.primary_background, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
         text.grid(row=0, column=0, sticky=tk.N, pady=(100,0))
-        text1 = tk.Label(fg=self.primary_foreground, text="Modely jsou aktuálně schopny rozpoznat 33 sportů, které naleznete v pravé části této obrazovky. Přesnější dokumentaci k modelům najdete ve zdrojovém kódu aplikace, nebo v mé maturitní práci", bg=self.primary_background, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
+        text1 = tk.Label(fg=self.primary_foreground, text=dic[2], bg=self.primary_background, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
         text1.grid(row=0, column=0, sticky=tk.N, pady=(250,0))
 
         self.sport_item_labels = []
@@ -283,8 +304,12 @@ class ImageClassifierApp:
 
             self.sport_item_labels.append(sport_item)
 
-
     def create_me_ui(self):
+        if self.language == 'cz':
+            dic = ['O autorovi']
+        else:
+            dic = ['About the author']
+
         self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1050, height=800)
         self.grey_frame.grid(row=0, column=0)
 
@@ -296,7 +321,7 @@ class ImageClassifierApp:
 
         self.create_toggle_menu()
 
-        lbl = tk.Label(text="O autorovi", font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
+        lbl = tk.Label(text=dic[0], font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
         lbl.grid(row=0, column=0, sticky=tk.N, pady=(20,0))
 
         text = tk.Label(text="", bg=self.primary_background, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
@@ -305,6 +330,11 @@ class ImageClassifierApp:
         text1.grid(row=0, column=0, sticky=tk.N, pady=(250,0))
 
     def create_help_ui(self):
+        if self.language == 'cz':
+            dic = ['Nápověda']
+        else:
+            dic = ['Help']
+
         self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1050, height=800)
         self.grey_frame.grid(row=0, column=0)
 
@@ -316,7 +346,7 @@ class ImageClassifierApp:
 
         self.create_toggle_menu()
 
-        lbl = tk.Label(text="Nápověda", font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
+        lbl = tk.Label(text=dic[0], font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
         lbl.grid(row=0, column=0, sticky=tk.N, pady=(20,0))
 
         text = tk.Label(text="", bg=self.primary_background, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
@@ -325,25 +355,42 @@ class ImageClassifierApp:
         text1.grid(row=0, column=0, sticky=tk.N, pady=(250,0))
     
     def create_settings_ui(self):
-        self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1050, height=800)
+        self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1500, height=800)
         self.grey_frame.grid(row=0, column=0)
-
-        self.blue_frame = tk.Frame(self.root, bg=self.secondary_background, width=450, height=800)
-        self.blue_frame.grid(row=0, column=1)
+        if self.language == 'cz':
+            dic = ['Nastavení', 'Tmavý režim', 'Jazyk']
+        else:
+            dic = ['Settings', 'Dark mode', 'Language']
 
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
 
         self.create_toggle_menu()
 
-        lbl = tk.Label(text="Nastavení", font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
+        #OBRAZOVKA
+        lbl = tk.Label(text=dic[0], font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
         lbl.grid(row=0, column=0, sticky=tk.N, pady=(20,0))
 
-        mode_switch_dark_btn = tk.Button(text='Tmavý režim', command=self.switch_mode)
-        mode_switch_dark_btn.grid(row=0, column=0, sticky=tk.N, pady=(100,0))
+        self.mode_switch_lbl = tk.Label(text=dic[1], bg=self.primary_background, font=('Arial', 12), fg=self.primary_foreground)
+        self.mode_switch_lbl.grid(row=0, column=0, sticky=tk.N, pady=(100,0), padx=(0,70))
+        
+        if self.primary_background == 'white':
+            self.mode_switch_btn = tk.Button(text='OFF', command=self.switch_mode, font=('Arial', 12), fg='#ff6666', bg=self.sidebar_background, border=0)
+        else:
+            self.mode_switch_btn = tk.Button(text='ON', command=self.switch_mode, font=('Arial', 12), fg='#53af32', bg=self.sidebar_background, border=0)
 
-        mode_switch_light_btn = tk.Button(text='Světlý režim', command=self.switch_mode)
-        mode_switch_light_btn.grid(row=0, column=0, sticky=tk.N, pady=(150,0))
+        self.mode_switch_btn.grid(row=0, column=0, sticky=tk.N, pady=(100,0), padx=(140,0))
+
+        #JAZYK
+        self.language_switch_lbl = tk.Label(text=dic[2], bg=self.primary_background, font=('Arial', 12), fg=self.primary_foreground)
+        self.language_switch_lbl.grid(row=0, column=0, sticky=tk.N, pady=(160,0), padx=(0,70))
+        
+        if self.language == 'cz':
+            self.language_switch_btn = tk.Button(text='CZ', command=self.switch_language, font=('Arial', 12), fg=self.primary_foreground, bg=self.sidebar_background, border=0)
+        else:
+            self.language_switch_btn = tk.Button(text='EN', command=self.switch_language, font=('Arial', 12), fg=self.primary_foreground, bg=self.sidebar_background, border=0)
+
+        self.language_switch_btn.grid(row=0, column=0, sticky=tk.N, pady=(160,0), padx=(140,0))
 
     def switch_mode(self):
         script_directory = os.path.dirname(os.path.abspath(__file__))
@@ -357,7 +404,44 @@ class ImageClassifierApp:
 
         self.get_settings()
         self.switch_ui('Nastavení')
-    
+
+    def switch_language(self):
+        script_directory = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(script_directory)
+        parser = ConfigParser()
+        parser.read('../config.ini')
+        if self.language == 'cz':
+            self.en_language(parser)
+        else:
+            self.cz_language(parser)
+
+        self.get_settings()
+        self.switch_ui('Nastavení')
+
+    def cz_language(self, parser):
+        parser['options']['language'] = 'cz'
+        with open('../config.ini', 'w') as configfile:
+            parser.write(configfile)
+        replacers = ['button_image', 'description_image', 'prediction_image']    
+        for replacer in replacers:
+            current = parser.get('options', replacer)
+            new_value = current.replace('/en/', '/cz/')
+            parser['options'][replacer] = new_value
+            with open('../config.ini', 'w') as configfile:
+                parser.write(configfile)
+        
+    def en_language(self, parser):
+        parser['options']['language'] = 'en'
+        with open('../config.ini', 'w') as configfile:
+            parser.write(configfile)
+        replacers = ['button_image', 'description_image', 'prediction_image']    
+        for replacer in replacers:
+            current = parser.get('options', replacer)
+            new_value = current.replace('/cz/', '/en/')
+            parser['options'][replacer] = new_value
+            with open('../config.ini', 'w') as configfile:
+                parser.write(configfile)
+
     def dark_mode(self, parser):
         parser['options']['primary_background'] = 'black'
         with open('../config.ini', 'w') as configfile:
@@ -365,16 +449,25 @@ class ImageClassifierApp:
         parser['options']['primary_foreground'] = 'white'
         with open('../config.ini', 'w') as configfile:
             parser.write(configfile)
-        parser['options']['secondary_background'] = 'black'
+        parser['options']['secondary_background'] = '#1a1a1a'
         with open('../config.ini', 'w') as configfile:
             parser.write(configfile)
         parser['options']['secondary_foreground'] = 'white'
         with open('../config.ini', 'w') as configfile:
             parser.write(configfile)
-        parser['options']['sidebar_background'] = '#4d423d'
+        parser['options']['sidebar_background'] = '#1a1a1a'
         with open('../config.ini', 'w') as configfile:
             parser.write(configfile)
         parser['options']['sidebar_foreground'] = 'white'
+        with open('../config.ini', 'w') as configfile:
+            parser.write(configfile)
+        parser['options']['button_image'] = '../components/dark/'+ self.language +'/button.png'
+        with open('../config.ini', 'w') as configfile:
+            parser.write(configfile)
+        parser['options']['toggle_menu_image'] = '../components/dark/toggle_menu.png'
+        with open('../config.ini', 'w') as configfile:
+            parser.write(configfile)
+        parser['options']['close_menu_image'] = '../components/dark/close_menu.png'
         with open('../config.ini', 'w') as configfile:
             parser.write(configfile)
 
@@ -395,6 +488,15 @@ class ImageClassifierApp:
         with open('../config.ini', 'w') as configfile:
             parser.write(configfile)
         parser['options']['sidebar_foreground'] = 'black'
+        with open('../config.ini', 'w') as configfile:
+            parser.write(configfile)
+        parser['options']['button_image'] = '../components/light/'+ self.language +'/button.png'
+        with open('../config.ini', 'w') as configfile:
+            parser.write(configfile)
+        parser['options']['toggle_menu_image'] = '../components/light/toggle_menu.png'
+        with open('../config.ini', 'w') as configfile:
+            parser.write(configfile)
+        parser['options']['close_menu_image'] = '../components/light/close_menu.png'
         with open('../config.ini', 'w') as configfile:
             parser.write(configfile)
 
