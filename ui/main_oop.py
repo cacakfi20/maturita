@@ -11,6 +11,7 @@ import matplotlib.patches
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from configparser import ConfigParser
 from tensorflow.keras.preprocessing import image
+import pandas as pd
 
 class ImageClassifierApp:
     def __init__(self, root):
@@ -39,6 +40,8 @@ class ImageClassifierApp:
         self.description_image = parser.get('options', 'description_image') 
         self.prediction_image = parser.get('options', 'prediction_image')
         self.toggle_menu_image = parser.get('options', 'toggle_menu_image')
+
+        self.sport_description_file_url = parser.get('options', 'image_description_file')
 
         self.language = parser.get('options', 'language')
 
@@ -102,6 +105,12 @@ class ImageClassifierApp:
         self.classify_image(filename)
 
     def classify_image(self, img_url):
+
+        if self.language == 'cz':
+            self.class_names = ["lukostřelba", "baseball", "basketbal", "kulečník", "bmx", "bowling", "box", "jízda na býku", "roztleskávání", "curling", "šerm", "krasobruslení", "americký fotbal", "závody formule 1", "golf", "skok do výšky", "hokej", "dostihy", "závody hydroplánů", "judo", "motocyklové závody", "pole dance", "rugby", "skoky na lyžích", "snowboarding", "rychlobruslení", "surfování", "plavání", "stolní tenis", "tenis", "dráhové kolo", "volejbal", "vzpírání"]
+        else:
+            self.class_names = ["archery", "baseball", "basketball", "billiards", "bmx", "bowling", "boxing", "bull riding", "cheerleading", "curling", "fencing", "figure skating", "football", "formula 1", "golf", "high jump", "hockey", "horse racing", "hydroplane racing", "judo", "motorcycle racing", "pole dance", "rugby", "ski jumping", "snowboarding", "speed skating", "surfing", "swimming", "table tennis", "tennis", "track cycling", "volleyball", "weightlifting"]
+
         img = image.load_img(img_url, target_size=(64, 64))
         X = image.img_to_array(img)
         X = np.expand_dims(X, axis=0)
@@ -113,6 +122,8 @@ class ImageClassifierApp:
             self.pred_label.destroy()
         if hasattr(self, 'desc_label'):
             self.desc_label.destroy()
+        if hasattr(self, 'sport_desc_lbl'):
+            self.sport_desc_lbl.destroy()
         
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
@@ -159,11 +170,18 @@ class ImageClassifierApp:
         if len(predicted_class_label.split()) == 3:
             predicted_class_label = predicted_class_label.split()[0] + "\n" + predicted_class_label.split()[1] + " " + predicted_class_label.split()[2]
         if len(predicted_class_label) > 10:
-            self.desc_label = tk.Label(bg=self.secondary_background, text=predicted_class_label.upper(), font=('Arial', 12, 'bold'), fg=self.secondary_foreground)
+            self.desc_label = tk.Label(bg=self.secondary_background, text=predicted_class_label.upper(), font=('Arial', 15, 'bold'), fg=self.secondary_foreground)
         else:
             self.desc_label = tk.Label(bg=self.secondary_background, text=predicted_class_label.upper(), font=('Arial', 15, 'bold'), fg=self.secondary_foreground)
 
         self.desc_label.grid(sticky=tk.NW ,row=0, column=1, pady=(450,0), padx=(75, 0))
+        print(predicted_class_index)
+        df = pd.read_excel(self.sport_description_file_url)
+        text_row = df[df['id'] == predicted_class_index]
+        text_desc = text_row['desc'].values[0]
+
+        self.sport_desc_lbl = tk.Label(text=text_desc, bg=self.secondary_background, fg=self.secondary_foreground, font=('Arial', 12), wraplength=400, justify=tk.LEFT)
+        self.sport_desc_lbl.grid(row=0, column=1, sticky=tk.N, pady=(520,0), padx=(25, 0))
 
     def change_cursor(self, event):
         self.button_canvas.config(cursor="hand2")
@@ -422,7 +440,7 @@ class ImageClassifierApp:
         parser['options']['language'] = 'cz'
         with open('../config.ini', 'w') as configfile:
             parser.write(configfile)
-        replacers = ['button_image', 'description_image', 'prediction_image']    
+        replacers = ['button_image', 'description_image', 'prediction_image', 'image_description_file']    
         for replacer in replacers:
             current = parser.get('options', replacer)
             new_value = current.replace('/en/', '/cz/')
@@ -434,7 +452,7 @@ class ImageClassifierApp:
         parser['options']['language'] = 'en'
         with open('../config.ini', 'w') as configfile:
             parser.write(configfile)
-        replacers = ['button_image', 'description_image', 'prediction_image']    
+        replacers = ['button_image', 'description_image', 'prediction_image', 'image_description_file']    
         for replacer in replacers:
             current = parser.get('options', replacer)
             new_value = current.replace('/cz/', '/en/')
