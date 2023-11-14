@@ -42,6 +42,7 @@ class ImageClassifierApp:
         self.toggle_menu_image = parser.get('options', 'toggle_menu_image')
 
         self.sport_description_file_url = parser.get('options', 'image_description_file')
+        self.latest_image = parser.get('options', 'latest_image')
 
         self.language = parser.get('options', 'language')
 
@@ -59,6 +60,27 @@ class ImageClassifierApp:
         os.chdir(script_directory)
 
         self.create_toggle_menu()
+        try:
+            sport_img = Image.open(self.latest_image)
+            max_width = 850
+            max_height = 600
+            width, height = sport_img.size
+            width_scale = max_width / width
+            height_scale = max_height / height
+            scale_factor = min(width_scale, height_scale)
+            new_width = int(width * scale_factor)
+            new_height = int(height * scale_factor)
+            sport_img = sport_img.resize((new_width, new_height))
+            self.sport_photo = ImageTk.PhotoImage(sport_img)
+
+            self.label = tk.Label(image=self.sport_photo)
+            self.label.image = self.sport_photo
+            self.label.grid(row=0, column=0)
+            if hasattr(self, 'setting_image_loaded'):
+                self.classify_image(self.latest_image)
+            self.setting_image_loaded = True
+        except:
+            pass
 
         imagebtn=Image.open(self.button_image)
         imgbtn=imagebtn.resize((296, 183))
@@ -103,6 +125,12 @@ class ImageClassifierApp:
         self.label.image = self.photo
         self.label.grid(row=0, column=0)
         self.classify_image(filename)
+        parser = ConfigParser()
+        parser.read('../config.ini')
+        parser['options']['latest_image'] = filename
+        with open('../config.ini', 'w') as configfile:
+            parser.write(configfile)
+        self.get_settings()
 
     def classify_image(self, img_url):
 
@@ -175,7 +203,6 @@ class ImageClassifierApp:
             self.desc_label = tk.Label(bg=self.secondary_background, text=predicted_class_label.upper(), font=('Arial', 15, 'bold'), fg=self.secondary_foreground)
 
         self.desc_label.grid(sticky=tk.NW ,row=0, column=1, pady=(450,0), padx=(75, 0))
-        print(predicted_class_index)
         df = pd.read_excel(self.sport_description_file_url)
         text_row = df[df['id'] == predicted_class_index]
         text_desc = text_row['desc'].values[0]
@@ -192,7 +219,10 @@ class ImageClassifierApp:
     def load_model(self):
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
-        self.model = tf.saved_model.load("../image_model/")
+        self.model = tf.saved_model.load("../models/image_models/image_model/")
+
+        if self.setting_image_loaded:
+            self.classify_image(self.latest_image)
 
     def create_toggle_menu(self):
         menu_image=Image.open(self.toggle_menu_image)
