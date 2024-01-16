@@ -224,7 +224,7 @@ class ImageClassifierApp:
     def load_model(self):
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
-        self.model = tf.saved_model.load("../models/image_models/image_model/")
+        self.model = tf.saved_model.load("./models/image_models/image_model/")
 
         if self.setting_image_loaded:
             self.classify_image(self.latest_image)
@@ -538,13 +538,13 @@ class ImageClassifierApp:
         parser['options']['sidebar_foreground'] = 'white'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
-        parser['options']['button_image'] = '../components/dark/'+ self.language +'/button.png'
+        parser['options']['button_image'] = './components/dark/'+ self.language +'/button.png'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
-        parser['options']['toggle_menu_image'] = '../components/dark/toggle_menu.png'
+        parser['options']['toggle_menu_image'] = './components/dark/toggle_menu.png'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
-        parser['options']['close_menu_image'] = '../components/dark/close_menu.png'
+        parser['options']['close_menu_image'] = './components/dark/close_menu.png'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
 
@@ -567,13 +567,13 @@ class ImageClassifierApp:
         parser['options']['sidebar_foreground'] = 'black'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
-        parser['options']['button_image'] = '../components/light/'+ self.language +'/button.png'
+        parser['options']['button_image'] = './components/light/'+ self.language +'/button.png'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
-        parser['options']['toggle_menu_image'] = '../components/light/toggle_menu.png'
+        parser['options']['toggle_menu_image'] = './components/light/toggle_menu.png'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
-        parser['options']['close_menu_image'] = '../components/light/close_menu.png'
+        parser['options']['close_menu_image'] = './components/light/close_menu.png'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
 
