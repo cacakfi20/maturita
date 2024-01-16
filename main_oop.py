@@ -43,8 +43,28 @@ class ImageClassifierApp:
 
         self.sport_description_file_url = parser.get('options', 'image_description_file')
         self.latest_image = parser.get('options', 'latest_image')
+        self.info_image = parser.get('options', 'info_image')
 
         self.language = parser.get('options', 'language')
+    
+    def display_other_possibilities(self, event):
+        self.other_canvas = tk.Canvas(width=500, height=200, border=0, highlightthickness=0)
+        self.other_canvas.grid(sticky=tk.NE, row=0, column=0, pady=(20,0), padx=(20,80))
+
+        self.other_item_labels = []
+        self.other_main = tk.Label(self.other_canvas, text="Nejbližší možnosti", font=('Arial', 14, 'bold'))
+        self.other_main.grid(row=0, column=0, sticky=tk.N, pady=(0, 0))
+        for i, item_text in enumerate(self.other_possibilities):
+            other_item = tk.Label(self.other_canvas, text=item_text[0]+': '+item_text[1], font=('Arial', 11, 'bold'))
+            other_item.grid(row=0, column=0, sticky=tk.NW, pady=(30*(i+1), 0))
+            self.other_item_labels.append(other_item)
+    
+    def destroy_other_possibilities(self, event):
+        if hasattr(self, 'other_canvas'):
+            self.other_canvas.destroy()
+            for other_item in self.other_item_labels:
+                other_item.destroy()
+            self.other_item_labels = []
 
     def create_image_ui(self):
         self.get_settings()
@@ -78,6 +98,18 @@ class ImageClassifierApp:
             self.label.grid(row=0, column=0)
             if hasattr(self, 'setting_image_loaded'):
                 self.classify_image(self.latest_image)
+            
+            info_image=Image.open(self.info_image)
+            info_img=info_image.resize((50, 50))
+            self.info_photo=ImageTk.PhotoImage(info_img)
+
+            self.info_canvas = tk.Canvas(bg=self.primary_background, width=50, height=50, border=0, highlightthickness=0)
+            self.info_canvas.grid(sticky=tk.NE, row=0, column=0, pady=(20,0), padx=(20,20))
+            self.info_canvas.create_image(0, 0, anchor=tk.NW, image=self.info_photo)
+            self.info_canvas.config(cursor="hand2")
+            self.info_canvas.bind("<Enter>", self.display_other_possibilities)
+            self.info_canvas.bind("<Leave>", self.destroy_other_possibilities)
+            
             self.setting_image_loaded = True
         except:
             pass
@@ -147,9 +179,10 @@ class ImageClassifierApp:
         predicted_class_label = self.class_names[predicted_class_index]
 
         top = tf.argsort(prediction, axis=-1, direction='DESCENDING')
+        self.other_possibilities = []
         for i in top.numpy()[0][:3]:
             probability = prediction[0][i].numpy()
-            print(self.class_names[i], probability*100)
+            self.other_possibilities.append([self.class_names[i], str(probability*100)])
 
         if hasattr(self, 'pred_label'):
             self.pred_label.destroy()   
@@ -226,7 +259,7 @@ class ImageClassifierApp:
         os.chdir(script_directory)
         self.model = tf.saved_model.load("./models/image_models/image_model/")
 
-        if self.setting_image_loaded:
+        if hasattr(self, 'setting_image_loaded'):
             self.classify_image(self.latest_image)
 
     def create_toggle_menu(self):
