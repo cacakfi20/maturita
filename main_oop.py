@@ -236,7 +236,7 @@ class ImageClassifierApp:
         if len(predicted_class_label.split()) == 3:
             predicted_class_label = predicted_class_label.split()[0] + "\n" + predicted_class_label.split()[1] + " " + predicted_class_label.split()[2]
         if len(predicted_class_label) > 10:
-            self.desc_label = tk.Label(bg=self.secondary_background, text=predicted_class_label.upper(), font=('Arial', 15, 'bold'), fg=self.secondary_foreground)
+            self.desc_label = tk.Label(bg=self.secondary_background, text=predicted_class_label.upper(), font=('Arial', 12, 'bold'), fg=self.secondary_foreground)
         else:
             self.desc_label = tk.Label(bg=self.secondary_background, text=predicted_class_label.upper(), font=('Arial', 15, 'bold'), fg=self.secondary_foreground)
 
@@ -245,7 +245,7 @@ class ImageClassifierApp:
         text_row = df[df['id'] == predicted_class_index]
         text_desc = text_row['desc'].values[0]
 
-        self.sport_desc_lbl = tk.Label(text=text_desc, bg=self.secondary_background, fg=self.secondary_foreground, font=('Arial', 12), wraplength=400, justify=tk.LEFT)
+        self.sport_desc_lbl = tk.Label(text=text_desc, bg=self.secondary_background, fg=self.secondary_foreground, font=('Arial', 11), wraplength=400, justify=tk.LEFT)
         self.sport_desc_lbl.grid(row=0, column=1, sticky=tk.N, pady=(520,0), padx=(25, 0))
 
     def change_cursor(self, event):
@@ -580,6 +580,9 @@ class ImageClassifierApp:
         parser['options']['close_menu_image'] = './components/dark/close_menu.png'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
+        parser['options']['info_image'] = './components/dark/more_info.png'
+        with open('./config.ini', 'w') as configfile:
+            parser.write(configfile)
 
     def light_mode(self, parser):
         parser['options']['primary_background'] = 'white'
@@ -607,6 +610,9 @@ class ImageClassifierApp:
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
         parser['options']['close_menu_image'] = './components/light/close_menu.png'
+        with open('./config.ini', 'w') as configfile:
+            parser.write(configfile)
+        parser['options']['info_image'] = './components/light/more_info.png'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
 
