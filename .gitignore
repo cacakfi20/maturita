@@ -1,5 +1,3 @@
-models/image_models
-models/text_models
 ui/dist/
 ui/build/
 ui/klasifikator.spec
