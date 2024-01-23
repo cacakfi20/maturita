@@ -52,10 +52,13 @@ class ImageClassifierApp:
         self.other_canvas.grid(sticky=tk.NE, row=0, column=0, pady=(20,0), padx=(20,80))
 
         self.other_item_labels = []
-        self.other_main = tk.Label(self.other_canvas, text="Nejbližší možnosti", font=('Arial', 14, 'bold'))
+        if self.language == 'cz':
+            self.other_main = tk.Label(self.other_canvas, text="Nejbližší možnosti", font=('Arial', 14, 'bold'))
+        else:
+            self.other_main = tk.Label(self.other_canvas, text="Closest possibilities", font=('Arial', 14, 'bold'))
         self.other_main.grid(row=0, column=0, sticky=tk.N, pady=(0, 0))
         for i, item_text in enumerate(self.other_possibilities):
-            other_item = tk.Label(self.other_canvas, text=item_text[0]+': '+item_text[1], font=('Arial', 11, 'bold'))
+            other_item = tk.Label(self.other_canvas, text=item_text[0]+': '+item_text[1]+'%', font=('Arial', 11, 'bold'))
             other_item.grid(row=0, column=0, sticky=tk.NW, pady=(30*(i+1), 0))
             self.other_item_labels.append(other_item)
     
@@ -111,6 +114,7 @@ class ImageClassifierApp:
             self.info_canvas.bind("<Leave>", self.destroy_other_possibilities)
             
             self.setting_image_loaded = True
+            self.classify_image(self.latest_image)
         except:
             pass
 
@@ -182,7 +186,7 @@ class ImageClassifierApp:
         self.other_possibilities = []
         for i in top.numpy()[0][:3]:
             probability = prediction[0][i].numpy()
-            self.other_possibilities.append([self.class_names[i], str(probability*100)])
+            self.other_possibilities.append([self.class_names[i], str(round(probability*100, 2))])
 
         if hasattr(self, 'pred_label'):
             self.pred_label.destroy()   
@@ -434,7 +438,10 @@ class ImageClassifierApp:
         lbl = tk.Label(text=dic[0], font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
         lbl.grid(row=0, column=0, sticky=tk.N, pady=(20,0))
 
-        text = tk.Label(text="", bg=self.primary_background, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
+        if self.language == 'cz':
+            text = tk.Label(text="Jmenuji se Filip Cacák a jsem studentem 4. ročníku střední průmyslové školy na Proseku (2023/24), zároveň jsem tvůrce tohoto maturitního projektu. Mimo školu pracuji na dohodu ve firmě Operátor ICT, kde se zabývám především vývojem a úpravou frontendu a backendu webovým aplikací pro Prahu a středočeský kraj. Mimo jiné také rád sportuji a jsem už od mala velkým fanouškem fotbalu, jelikož jsem ho celý život hrál. O víkendech rád trávím volný čas s přáteli a rodinou.", bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
+        else:
+            text = tk.Label(text="My name is Filip Cacák and I am a student of the 4th year of the Secondary Industrial School in Prosek (2023/24), I am also the creator of this graduation project. Outside of school, I work on contract in the company Operátor ICT, where I mainly deal with the development and modification of frontend and backend web applications for Prague and Central Bohemia. Among other things, I also like sports and have been a big fan of football since I was a kid, as I have played it all my life. On weekends I like to spend my free time with friends and family.", bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 12), wraplength=700, justify=tk.LEFT)            
         text.grid(row=0, column=0, sticky=tk.N, pady=(100,0))
         text1 = tk.Label(text="", bg=self.primary_background, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
         text1.grid(row=0, column=0, sticky=tk.N, pady=(250,0))
