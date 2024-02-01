@@ -10,8 +10,13 @@ import matplotlib.figure
 import matplotlib.patches
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from configparser import ConfigParser
-from tensorflow.keras.preprocessing import image
+from keras.preprocessing import image
+from keras.models import load_model
 import pandas as pd
+from keras.preprocessing.sequence import pad_sequences
+from ai_text.text_processing import preprocess_text
+import pickle
+import random
 
 class ImageClassifierApp:
     def __init__(self, root):
@@ -46,6 +51,7 @@ class ImageClassifierApp:
         self.info_image = parser.get('options', 'info_image')
 
         self.language = parser.get('options', 'language')
+        self.text_model_lang = parser.get('options', 'text_model_lang')
     
     def display_other_possibilities(self, event):
         self.other_canvas = tk.Canvas(width=500, height=200, border=0, highlightthickness=0)
@@ -262,6 +268,10 @@ class ImageClassifierApp:
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
         self.model = tf.saved_model.load("./models/image_models/image_model/")
+        if self.text_model_lang == 'cz':
+            self.text_model = load_model('./models/text_models/text_model_cz')
+        else:
+            self.text_model = load_model('./models/text_models/text_model_en')
 
         if hasattr(self, 'setting_image_loaded'):
             self.classify_image(self.latest_image)
@@ -342,11 +352,33 @@ class ImageClassifierApp:
 
     def on_focus_out(self, event):
         self.text_field.config(border=1)
-        
+    
+    def switch_text_model(self):
+        parser = ConfigParser()
+        parser.read('./config.ini')
+        if self.text_model_lang == 'cz':
+            parser['options']['text_model_lang'] = 'en'
+        else:
+            parser['options']['text_model_lang'] = 'cz'
+        with open('./config.ini', 'w') as configfile:
+            parser.write(configfile)
+        self.get_settings()
+        if self.text_model_lang == 'cz':
+            print('přepnuto na český')
+            self.text_model = load_model('./models/text_models/text_model_cz')
+        else:
+            print('přepnuto na anglický režim')
+            self.text_model = load_model('./models/text_models/text_model_en')
+        self.create_text_ui()
+
     def create_text_ui(self):
         self.get_settings()
         self.class_names = ["lukostřelba", "baseball", "basketbal", "kulečník", "bmx", "bowling", "box", "jízda na býku", "roztleskávání", "curling", "šerm", "krasobruslení", "americký fotbal", "závody formule 1", "golf", "skok do výšky", "hokej", "dostihy", "závody hydroplánů", "judo", "motocyklové závody", "pole dance", "rugby", "skoky na lyžích", "snowboarding", "rychlobruslení", "surfování", "plavání", "stolní tenis", "tenis", "dráhové kolo", "volejbal", "vzpírání"]
-        
+        self.en_class_names = ["archery", "baseball", "basketball", "billiards", "bmx", "bowling", "boxing", "bull riding", "cheerleading", "curling", "fencing", "figure skating", "football", "formula 1 racing", "golf", "high jump", "hockey", "horse racing", "hydroplane racing", "judo", "motorcycle racing", "pole dance", "rugby", "ski jumping", "snow boarding", "speed skating", "surfing", "swimming", "table tennis", "tennis", "track cycling", "volleyball", "weightlifting"]
+        if self.language == 'cz':
+            disc = ['Popiš sport', 'Odeslat', 'Nastav jazyk textového modelu']
+        else:
+            disc = ['Describe the sport', 'Submit', 'Set the language of the text model']
         self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1050, height=800)
         self.grey_frame.grid(row=0, column=0)
 
@@ -358,9 +390,20 @@ class ImageClassifierApp:
 
         self.create_toggle_menu()
 
-        self.text_field = tk.Text(width=35, height=10, font=('Arial', 10), border=3, bg=self.secondary_background, fg=self.secondary_foreground)
-        self.text_field.grid(sticky=tk.N, row=0, column=1, pady=(60,0))
-        self.text_field.insert(tk.END, 'Describe the sport')
+        self.language_switch_lbl = tk.Label(text=disc[2], bg=self.primary_background, font=('Arial', 12), fg=self.primary_foreground)
+        self.language_switch_lbl.grid(row=0, column=1, sticky=tk.N, pady=(20,0), padx=(0,0))
+        
+        if self.text_model_lang == 'cz':
+            self.language_switch_btn = tk.Button(text='CZ', command=self.switch_text_model, font=('Arial', 12), fg=self.primary_foreground, bg=self.primary_background, border=0)
+        else:
+            self.language_switch_btn = tk.Button(text='EN', command=self.switch_text_model, font=('Arial', 12), fg=self.primary_foreground, bg=self.primary_background, border=0)
+
+        self.language_switch_btn.grid(row=0, column=1, sticky=tk.N, pady=(55,0), padx=(0,0))
+        self.language_switch_btn.config(cursor="hand2")
+
+        self.text_field = tk.Text(width=35, height=10, font=('Arial', 10), border=3, bg=self.secondary_background, fg=self.secondary_foreground, insertbackground=self.secondary_foreground)
+        self.text_field.grid(sticky=tk.N, row=0, column=1, pady=(90,0))
+        self.text_field.insert(tk.END, disc[0])
         self.text_field.bind("<FocusIn>", self.on_focus)
         self.text_field.bind("<FocusOut>", self.on_focus_out)
         
@@ -375,6 +418,111 @@ class ImageClassifierApp:
         self.name_label = tk.Label(text="© 2023 Filip Cacák", bg=self.primary_background, fg="#d6d6d6", font=('Arial', 16, 'bold'))
         self.name_label.grid(sticky=tk.SW, row=0, column=0, pady=(0,50), padx=(290,0))
     
+        self.submit_btn = tk.Button(text=disc[1], bg=self.secondary_background, fg=self.secondary_foreground, font=('Arial', 12, 'bold'), border=0, highlightthickness=0, command=self.classify_text)
+        self.submit_btn.grid(sticky=tk.N, row=0, column=1, pady=(230,0))
+        self.submit_btn.config(cursor="hand2")
+    
+    def classify_text(self):
+        self.input = self.text_field.get("1.0", 'end-1c')
+        print(self.input)
+        with open('./ai_text/tokenizer.pickle', 'rb') as handle:
+            tokenizer = pickle.load(handle)
+        with open('./ai_text/encoder.pickle', 'rb') as handle:
+            encoder = pickle.load(handle)
+            string = preprocess_text(self.input)
+        sequences = tokenizer.texts_to_sequences([string])
+        data = pad_sequences(sequences, maxlen=50)
+        predictions = self.text_model.predict(data)
+        predicted_labels = predictions.argmax(axis=-1)
+        predicted_labels = encoder.inverse_transform(predicted_labels)
+        predicted_confidence = predictions.max(axis=-1)
+        print(self.class_names[predicted_labels[0]], predicted_confidence[0])
+        self.get_random_picture(self.en_class_names[predicted_labels[0]])
+        if hasattr(self, 'pred_label'):
+            self.pred_label.destroy()   
+        if hasattr(self, 'desc_label'):
+            self.desc_label.destroy()
+        if hasattr(self, 'sport_desc_lbl'):
+            self.sport_desc_lbl.destroy()
+        
+        script_directory = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(script_directory)
+
+        self.pieCanvas = tk.Canvas(bg=self.secondary_background, width=296, height=296, border=0, highlightthickness=0)
+        self.pieCanvas.grid(sticky=tk.NE, row=0, column=1, pady=(360,0), padx=(0, 27))
+
+        fig = matplotlib.figure.Figure(figsize=(1.5,1.5))
+        fig.patch.set_facecolor(self.secondary_background)
+        ax = fig.add_subplot(111)
+        if 100 * np.max(predicted_confidence)//1 <= 30:
+            ax.pie([100 * np.max(predicted_confidence)//1,100-100 * np.max(predicted_confidence)//1], colors=["#ff6666",self.secondary_background], startangle=90)   
+        if 100 * np.max(predicted_confidence)//1 > 30:
+            ax.pie([100 * np.max(predicted_confidence)//1,100-100 * np.max(predicted_confidence)//1], colors=["#e68541",self.secondary_background], startangle=90)    
+        if 100 * np.max(predicted_confidence)//1 >= 70:
+            ax.pie([100 * np.max(predicted_confidence)//1,100-100 * np.max(predicted_confidence)//1], colors=["#53af32",self.secondary_background], startangle=90) 
+        circle=matplotlib.patches.Circle((0,0), 0.8, color=self.secondary_background)
+        ax.add_artist(circle)
+        self.canvasChart = FigureCanvasTkAgg(fig, master=self.pieCanvas,)
+        self.canvasChart.get_tk_widget().grid(row=0, column=0, pady=(0,0), padx=(0, 0))
+        self.canvasChart.draw()
+
+        pred_label=Image.open(self.prediction_image)
+        pred_img=pred_label.resize((296, 90))
+        self.pred_photo=ImageTk.PhotoImage(pred_img)
+
+        self.pred_canvas = tk.Canvas(bg=self.secondary_background, width=296, height=90, border=0, highlightthickness=0)
+        self.pred_canvas.grid(sticky=tk.NW, row=0, column=1, pady=(300,0), padx=(75,0))
+        self.pred_canvas.create_image(0, 0, anchor=tk.NW, image=self.pred_photo)
+
+        self.pred_label = tk.Label(self.pieCanvas, bg=self.secondary_background, fg=self.secondary_foreground, text=f"{int(100 * np.max(predicted_confidence)//1)}%", font=('Arial', 18, 'bold'))
+        self.pred_label.grid(row=0, column=0, pady=(0,0), padx=(0, 0))
+
+        desc_label=Image.open(self.description_image)
+        desc_img=desc_label.resize((115, 33))
+        self.desc_photo=ImageTk.PhotoImage(desc_img)
+
+        self.desc_canvas = tk.Canvas(bg=self.secondary_background, width=115, height=33, border=0, highlightthickness=0)
+        self.desc_canvas.grid(sticky=tk.NW, row=0, column=1, pady=(400,0), padx=(75,0))
+        self.desc_canvas.create_image(0, 0, anchor=tk.NW, image=self.desc_photo)
+
+        predicted_class_label = self.class_names[predicted_labels[0]]
+
+        if len(predicted_class_label.split()) == 2:
+            predicted_class_label = predicted_class_label.split()[0] + "\n" + predicted_class_label.split()[1]
+        if len(predicted_class_label.split()) == 3:
+            predicted_class_label = predicted_class_label.split()[0] + "\n" + predicted_class_label.split()[1] + " " + predicted_class_label.split()[2]
+        if len(predicted_class_label) > 10:
+            self.desc_label = tk.Label(bg=self.secondary_background, text=predicted_class_label.upper(), font=('Arial', 12, 'bold'), fg=self.secondary_foreground)
+        else:
+            self.desc_label = tk.Label(bg=self.secondary_background, text=predicted_class_label.upper(), font=('Arial', 15, 'bold'), fg=self.secondary_foreground)
+
+        self.desc_label.grid(sticky=tk.NW ,row=0, column=1, pady=(450,0), padx=(75, 0))
+        df = pd.read_excel(self.sport_description_file_url)
+        text_row = df[df['id'] == predicted_labels[0]]
+        text_desc = text_row['desc'].values[0]
+
+        self.sport_desc_lbl = tk.Label(text=text_desc, bg=self.secondary_background, fg=self.secondary_foreground, font=('Arial', 11), wraplength=400, justify=tk.LEFT)
+        self.sport_desc_lbl.grid(row=0, column=1, sticky=tk.N, pady=(520,0), padx=(25, 0))
+
+    def get_random_picture(self, sport):
+        randomint = random.randint(1, 5) 
+        sport_img = Image.open('./data/test/'+sport+'/'+str(randomint)+'.jpg')
+        max_width = 850
+        max_height = 600
+        width, height = sport_img.size
+        width_scale = max_width / width
+        height_scale = max_height / height
+        scale_factor = min(width_scale, height_scale)
+        new_width = int(width * scale_factor)
+        new_height = int(height * scale_factor)
+        sport_img = sport_img.resize((new_width, new_height))
+        self.sport_photo = ImageTk.PhotoImage(sport_img)
+
+        self.label = tk.Label(image=self.sport_photo)
+        self.label.image = self.sport_photo
+        self.label.grid(row=0, column=0)
+
+
     def create_about_ui(self):
         if self.language == 'cz':
             self.class_names = ["lukostřelba", "baseball", "basketbal", "kulečník", "bmx", "bowling", "box", "jízda na býku", "roztleskávání", "curling", "šerm", "krasobruslení", "americký fotbal", "závody formule 1", "golf", "skok do výšky", "hokej", "dostihy", "závody hydroplánů", "judo", "motocyklové závody", "pole dance", "rugby", "skoky na lyžích", "snowboarding", "rychlobruslení", "surfování", "plavání", "stolní tenis", "tenis", "dráhové kolo", "volejbal", "vzpírání"]
@@ -448,15 +596,12 @@ class ImageClassifierApp:
 
     def create_help_ui(self):
         if self.language == 'cz':
-            dic = ['Nápověda']
+            dic = ['Nápověda', 'Obrázkový model', 'Textový model']
         else:
-            dic = ['Help']
+            dic = ['Help', 'Image model', 'Text model']
 
-        self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1050, height=800)
+        self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1500, height=800)
         self.grey_frame.grid(row=0, column=0)
-
-        self.blue_frame = tk.Frame(self.root, bg=self.secondary_background, width=450, height=800)
-        self.blue_frame.grid(row=0, column=1)
 
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
@@ -465,11 +610,25 @@ class ImageClassifierApp:
 
         lbl = tk.Label(text=dic[0], font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
         lbl.grid(row=0, column=0, sticky=tk.N, pady=(20,0))
+        lbl_image_model = tk.Label(text=dic[1], bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 14), wraplength=700, justify=tk.LEFT)
+        lbl_image_model.grid(row=0, column=0, sticky=tk.NW, pady=(100,0), padx=(150,0))
 
-        text = tk.Label(text="", bg=self.primary_background, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
-        text.grid(row=0, column=0, sticky=tk.N, pady=(100,0))
-        text1 = tk.Label(text="", bg=self.primary_background, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
-        text1.grid(row=0, column=0, sticky=tk.N, pady=(250,0))
+        if self.language == 'cz':
+            text = tk.Label(text="1) Nahrajeme fotografii sportu tlačítkem vpravo nahoře\n2) Model fotografii vyhodnotí a zobrazí klasifikaci s bližším popisem sportu", bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 12), wraplength=700, justify=tk.LEFT)    
+        else:
+            text = tk.Label(text="1) Upload a photo of the sport using the button on the top right\n2) The model evaluates the photo and displays the classification with closer sport description", bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
+
+        text.grid(row=0, column=0, sticky=tk.NW, pady=(140,0), padx=(150,0))
+
+        lbl_text_model = tk.Label(text=dic[2], bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 14), wraplength=700, justify=tk.LEFT)
+        lbl_text_model.grid(row=0, column=0, sticky=tk.NW, pady=(240,0), padx=(150,0))
+
+        if self.language == 'cz':
+            text1 = tk.Label(text="1) Napiš text do textového pole pravo nahoře a klikani na tlačítko\n2) Model text vyhodnotí a zobrazí klasifikaci s bližším popisem sportu a jeho obrázkem", bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 12), wraplength=700, justify=tk.LEFT)    
+        else:
+            text1 = tk.Label(text="1) Upload a photo of the sport using the button on the top right\n2) The model evaluates the photo and displays the classification with closer sport description", bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
+
+        text1.grid(row=0, column=0, sticky=tk.NW, pady=(280,0), padx=(150,0))
     
     def create_settings_ui(self):
         self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1500, height=800)
