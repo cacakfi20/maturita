@@ -268,10 +268,8 @@ class ImageClassifierApp:
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
         self.model = tf.saved_model.load("./models/image_models/image_model/")
-        if self.text_model_lang == 'cz':
-            self.text_model = load_model('./models/text_models/text_model_cz')
-        else:
-            self.text_model = load_model('./models/text_models/text_model_en')
+        self.text_model_cz = load_model('./models/text_models/text_model_cz')
+        self.text_model_en = load_model('./models/text_models/text_model_en')
 
         if hasattr(self, 'setting_image_loaded'):
             self.classify_image(self.latest_image)
@@ -365,10 +363,8 @@ class ImageClassifierApp:
         self.get_settings()
         if self.text_model_lang == 'cz':
             print('přepnuto na český')
-            self.text_model = load_model('./models/text_models/text_model_cz')
         else:
             print('přepnuto na anglický režim')
-            self.text_model = load_model('./models/text_models/text_model_en')
         self.create_text_ui()
 
     def create_text_ui(self):
@@ -431,8 +427,14 @@ class ImageClassifierApp:
             encoder = pickle.load(handle)
             string = preprocess_text(self.input)
         sequences = tokenizer.texts_to_sequences([string])
-        data = pad_sequences(sequences, maxlen=50)
-        predictions = self.text_model.predict(data)
+        if self.text_model_lang == 'en':
+            data = pad_sequences(sequences, maxlen=50)
+        else:
+            data = pad_sequences(sequences, maxlen=37)
+        if self.text_model_lang == 'cz':
+            predictions = self.text_model_cz.predict(data)
+        else:
+            predictions = self.text_model_en.predict(data)
         predicted_labels = predictions.argmax(axis=-1)
         predicted_labels = encoder.inverse_transform(predicted_labels)
         predicted_confidence = predictions.max(axis=-1)
@@ -614,7 +616,7 @@ class ImageClassifierApp:
         lbl_image_model.grid(row=0, column=0, sticky=tk.NW, pady=(100,0), padx=(150,0))
 
         if self.language == 'cz':
-            text = tk.Label(text="1) Nahrajeme fotografii sportu tlačítkem vpravo nahoře\n2) Model fotografii vyhodnotí a zobrazí klasifikaci s bližším popisem sportu", bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 12), wraplength=700, justify=tk.LEFT)    
+            text = tk.Label(text="1) Nahraje fotografii sportu tlačítkem vpravo nahoře\n2) Model fotografii vyhodnotí a zobrazí klasifikaci s bližším popisem sportu", bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 12), wraplength=700, justify=tk.LEFT)    
         else:
             text = tk.Label(text="1) Upload a photo of the sport using the button on the top right\n2) The model evaluates the photo and displays the classification with closer sport description", bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
 
@@ -626,7 +628,7 @@ class ImageClassifierApp:
         if self.language == 'cz':
             text1 = tk.Label(text="1) Napiš text do textového pole pravo nahoře a klikani na tlačítko\n2) Model text vyhodnotí a zobrazí klasifikaci s bližším popisem sportu a jeho obrázkem", bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 12), wraplength=700, justify=tk.LEFT)    
         else:
-            text1 = tk.Label(text="1) Upload a photo of the sport using the button on the top right\n2) The model evaluates the photo and displays the classification with closer sport description", bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
+            text1 = tk.Label(text="1) Type the text in the text box on the top right and click on the button\n2) The model will evaluate the text and display the classification with a more detailed description of the sport and its picture", bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
 
         text1.grid(row=0, column=0, sticky=tk.NW, pady=(280,0), padx=(150,0))
     
