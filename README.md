@@ -7,10 +7,10 @@
 - **Zakázka:** Maturitní práce
 
 Vedoucí práce
-- **Jméno:** # Přemysl Vaculík
+- **Jméno:**  Přemysl Vaculík
 
 Vývoj
-- **Jméno:** # Filip Cacák
+- **Jméno:**  Filip Cacák
 - **Kontakt:** cacakfi20@sps-prosek.cz
   
 ## Návod jak spustit  
@@ -22,3 +22,4 @@ Vývoj
 ## Testovací scénář
 Proveďte následující kroky pro ověření funkčnosti aplikace:
 1. Otestujte funkčnost menu a všech ostatních funkcí aplikace
+2. Vyzkoušejte funkčnost klasifikačních modelů (obrázkový model mohou mít problémy s méně kvalitními obrázky)
