@@ -15,8 +15,9 @@ Vývoj
   
 ## Návod jak spustit  
 
-1. naklonujeme tento projekt  
-2. spustíme .exe soubor 
+1. naklonujte tento projekt  
+2. spusťte run.exe soubor ve složce /run
+3. počkejte chvílu než se aplikace spustí - 15-30s (načítají se modely strojového učení)
 
 ## Testovací scénář
 Proveďte následující kroky pro ověření funkčnosti aplikace:
