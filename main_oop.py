@@ -268,9 +268,9 @@ class ImageClassifierApp:
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
         self.model = tf.saved_model.load("./models/image_models/image_model/")
-        '''self.text_model_cz = load_model('./models/text_models/text_model_cz')
+        self.text_model_cz = load_model('./models/text_models/text_model_cz')
         self.text_model_en = load_model('./models/text_models/text_model_en')
-'''
+
         if hasattr(self, 'setting_image_loaded'):
             self.classify_image(self.latest_image)
 
@@ -428,9 +428,9 @@ class ImageClassifierApp:
             string = preprocess_text(self.input)
         sequences = tokenizer.texts_to_sequences([string])
         if self.text_model_lang == 'en':
-            data = pad_sequences(sequences, maxlen=50)
+            data = pad_sequences(sequences, maxlen=38)
         else:
-            data = pad_sequences(sequences, maxlen=37)
+            data = pad_sequences(sequences, maxlen=28)
         if self.text_model_lang == 'cz':
             predictions = self.text_model_cz.predict(data)
         else:
