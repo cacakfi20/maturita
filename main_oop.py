@@ -17,6 +17,8 @@ from keras.preprocessing.sequence import pad_sequences
 from ai_text.text_processing import preprocess_text
 import pickle
 import random
+from sklearn.preprocessing import LabelEncoder
+import sklearn
 
 class ImageClassifierApp:
     def __init__(self, root):
@@ -27,11 +29,16 @@ class ImageClassifierApp:
         self.create_image_ui()
 
     def get_settings(self):
+        # Získání adresáře, ve kterém se nachází spouštěný skript
         script_directory = os.path.dirname(os.path.abspath(__file__))
+        # Změna pracovního adresáře na adresář skriptu
         os.chdir(script_directory)
+        # Inicializace objektu ConfigParser pro čtení konfiguračního souboru
         parser = ConfigParser()
+        # Načtení konfiguračního souboru s názvem 'config.ini'
         parser.read('./config.ini')
 
+        # Načtení různých nastavení z konfiguračního souboru pomocí metody get
         self.primary_background = parser.get('options', 'primary_background')
         self.primary_foreground = parser.get('options', 'primary_foreground')
         self.secondary_background = parser.get('options', 'secondary_background')
@@ -54,21 +61,28 @@ class ImageClassifierApp:
         self.text_model_lang = parser.get('options', 'text_model_lang')
     
     def display_other_possibilities(self, event):
+        # Vytvoření canvasu s určenou šířkou, výškou a nastavením okrajů a výplně
         self.other_canvas = tk.Canvas(width=500, height=200, border=0, highlightthickness=0)
+        # Umístění canvasu na zvolenou pozici v hlavním okně
         self.other_canvas.grid(sticky=tk.NE, row=0, column=0, pady=(20,0), padx=(20,80))
 
+        # Inicializace seznamu pro uchování popisků
         self.other_item_labels = []
+        # Vytvoření hlavního nadpisu pro zobrazení nejbližších možností
         if self.language == 'cz':
             self.other_main = tk.Label(self.other_canvas, text="Nejbližší možnosti", font=('Arial', 14, 'bold'))
         else:
             self.other_main = tk.Label(self.other_canvas, text="Closest possibilities", font=('Arial', 14, 'bold'))
+        # Umístění hlavního nadpisu na canvas
         self.other_main.grid(row=0, column=0, sticky=tk.N, pady=(0, 0))
+        # Vytvoření popisků pro každou další možnost a jejich umístění na canvas
         for i, item_text in enumerate(self.other_possibilities):
             other_item = tk.Label(self.other_canvas, text=item_text[0]+': '+item_text[1]+'%', font=('Arial', 11, 'bold'))
             other_item.grid(row=0, column=0, sticky=tk.NW, pady=(30*(i+1), 0))
             self.other_item_labels.append(other_item)
     
     def destroy_other_possibilities(self, event):
+        # Zrušení canvasu s možnostmi
         if hasattr(self, 'other_canvas'):
             self.other_canvas.destroy()
             for other_item in self.other_item_labels:
@@ -76,20 +90,30 @@ class ImageClassifierApp:
             self.other_item_labels = []
 
     def create_image_ui(self):
+        # Načtení nastavení
         self.get_settings()
+        
+        # Seznam názvů sportů
         self.class_names = ["lukostřelba", "baseball", "basketbal", "kulečník", "bmx", "bowling", "box", "jízda na býku", "roztleskávání", "curling", "šerm", "krasobruslení", "americký fotbal", "závody formule 1", "golf", "skok do výšky", "hokej", "dostihy", "závody hydroplánů", "judo", "motocyklové závody", "pole dance", "rugby", "skoky na lyžích", "snowboarding", "rychlobruslení", "surfování", "plavání", "stolní tenis", "tenis", "dráhové kolo", "volejbal", "vzpírání"]
         
+        # Vytvoření šedého rámečku
         self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1050, height=800)
         self.grey_frame.grid(row=0, column=0)
 
+        # Vytvoření modrého rámečku
         self.blue_frame = tk.Frame(self.root, bg=self.secondary_background, width=450, height=800)
         self.blue_frame.grid(row=0, column=1)
 
+        # Získání adresáře, ve kterém se nachází spouštěný skript
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
 
+        # Vytvoření rozbalovacího menu
         self.create_toggle_menu()
+        
+        # Pokus o zobrazení posledního obrázku
         try:
+            # Otevření posledního obrázku
             sport_img = Image.open(self.latest_image)
             max_width = 850
             max_height = 600
@@ -102,12 +126,16 @@ class ImageClassifierApp:
             sport_img = sport_img.resize((new_width, new_height))
             self.sport_photo = ImageTk.PhotoImage(sport_img)
 
+            # Zobrazení obrázku na plátně
             self.label = tk.Label(image=self.sport_photo)
             self.label.image = self.sport_photo
             self.label.grid(row=0, column=0)
+            
+            # Pokud je nastavený obrázek, provede se klasifikace
             if hasattr(self, 'setting_image_loaded'):
                 self.classify_image(self.latest_image)
             
+            # Zobrazení ikony informací na plátně
             info_image=Image.open(self.info_image)
             info_img=info_image.resize((50, 50))
             self.info_photo=ImageTk.PhotoImage(info_img)
@@ -119,11 +147,14 @@ class ImageClassifierApp:
             self.info_canvas.bind("<Enter>", self.display_other_possibilities)
             self.info_canvas.bind("<Leave>", self.destroy_other_possibilities)
             
+            # Nastavení příznaku načtení obrázku
             self.setting_image_loaded = True
+            # Klasifikace obrázku
             self.classify_image(self.latest_image)
         except:
             pass
 
+        # Načtení tlačítka pro nahrání obrázku
         imagebtn=Image.open(self.button_image)
         imgbtn=imagebtn.resize((296, 183))
         self.photo=ImageTk.PhotoImage(imgbtn)
@@ -135,6 +166,7 @@ class ImageClassifierApp:
         self.button_canvas.bind("<Enter>", self.change_cursor)
         self.button_canvas.bind("<Leave>", self.restore_cursor)
 
+        # Načtení loga
         imageLogo=Image.open(self.logo_image)
         imgLogo=imageLogo.resize((169, 33))
         self.photoLogo=ImageTk.PhotoImage(imgLogo)
@@ -143,11 +175,14 @@ class ImageClassifierApp:
         self.logo_canvas.grid(sticky=tk.SW, row=0, column=0, pady=(0,50), padx=(100,0))
         self.logo_canvas.create_image(0, 0, anchor=tk.NW, image=self.photoLogo)
 
+        # Vytvoření popisku s autorskými právy
         self.name_label = tk.Label(text="© 2023 Filip Cacák", bg=self.primary_background, fg="#d6d6d6", font=('Arial', 16, 'bold'))
         self.name_label.grid(sticky=tk.SW, row=0, column=0, pady=(0,50), padx=(290,0))
 
     def upload_action(self, event):
+        # Zobrazení dialogu pro výběr souboru
         filename = filedialog.askopenfilename()
+        # Otevření vybraného obrázku
         sport_img = Image.open(filename)
         max_width = 850
         max_height = 600
@@ -157,43 +192,56 @@ class ImageClassifierApp:
         scale_factor = min(width_scale, height_scale)
         new_width = int(width * scale_factor)
         new_height = int(height * scale_factor)
+        # Změna velikosti obrázku
         sport_img = sport_img.resize((new_width, new_height))
         self.sport_photo = ImageTk.PhotoImage(sport_img)
 
+        # Zničení předchozího zobrazení obrázku, pokud existuje
         if hasattr(self, 'label'):
             self.label.destroy()
 
+        # Vytvoření nového zobrazení obrázku
         self.label = tk.Label(image=self.sport_photo)
         self.label.image = self.photo
         self.label.grid(row=0, column=0)
+        # Klasifikace obrázku
         self.classify_image(filename)
+        
+        # Uložení cesty k poslednímu nahránému obrázku do konfiguračního souboru
         parser = ConfigParser()
         parser.read('./config.ini')
         parser['options']['latest_image'] = filename
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
+        
+        # Aktualizace nastavení
         self.get_settings()
 
     def classify_image(self, img_url):
-
+        # Načtení jazyka názvů
         if self.language == 'cz':
             self.class_names = ["lukostřelba", "baseball", "basketbal", "kulečník", "bmx", "bowling", "box", "jízda na býku", "roztleskávání", "curling", "šerm", "krasobruslení", "americký fotbal", "závody formule 1", "golf", "skok do výšky", "hokej", "dostihy", "závody hydroplánů", "judo", "motocyklové závody", "pole dance", "rugby", "skoky na lyžích", "snowboarding", "rychlobruslení", "surfování", "plavání", "stolní tenis", "tenis", "dráhové kolo", "volejbal", "vzpírání"]
         else:
             self.class_names = ["archery", "baseball", "basketball", "billiards", "bmx", "bowling", "boxing", "bull riding", "cheerleading", "curling", "fencing", "figure skating", "football", "formula 1", "golf", "high jump", "hockey", "horse racing", "hydroplane racing", "judo", "motorcycle racing", "pole dance", "rugby", "ski jumping", "snowboarding", "speed skating", "surfing", "swimming", "table tennis", "tennis", "track cycling", "volleyball", "weightlifting"]
 
+        # Načtení obrázku
         img = image.load_img(img_url, target_size=(64, 64))
         X = image.img_to_array(img)
         X = np.expand_dims(X, axis=0)
+
+        # Klasifikace obrázku
         prediction = self.model(X)
         predicted_class_index = tf.argmax(prediction, axis=1).numpy()[0]
         predicted_class_label = self.class_names[predicted_class_index]
 
+        # Seřazení pravděpodobností
         top = tf.argsort(prediction, axis=-1, direction='DESCENDING')
         self.other_possibilities = []
         for i in top.numpy()[0][:3]:
             probability = prediction[0][i].numpy()
             self.other_possibilities.append([self.class_names[i], str(round(probability*100, 2))])
-
+        
+        # Zničení předchozího zobrazení obrázku, pokud existuje
         if hasattr(self, 'pred_label'):
             self.pred_label.destroy()   
         if hasattr(self, 'desc_label'):
@@ -201,6 +249,7 @@ class ImageClassifierApp:
         if hasattr(self, 'sport_desc_lbl'):
             self.sport_desc_lbl.destroy()
         
+        # Zobrazení obrázku s pravděpodobností
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
 
@@ -218,6 +267,8 @@ class ImageClassifierApp:
             ax.pie([100 * np.max(prediction)//1,100-100 * np.max(prediction)//1], colors=["#53af32",self.secondary_background], startangle=90) 
         circle=matplotlib.patches.Circle((0,0), 0.8, color=self.secondary_background)
         ax.add_artist(circle)
+
+        # Zobrazení grafů a ostatních vizuálních efektů
         self.canvasChart = FigureCanvasTkAgg(fig, master=self.pieCanvas,)
         self.canvasChart.get_tk_widget().grid(row=0, column=0, pady=(0,0), padx=(0, 0))
         self.canvasChart.draw()
@@ -241,6 +292,7 @@ class ImageClassifierApp:
         self.desc_canvas.grid(sticky=tk.NW, row=0, column=1, pady=(400,0), padx=(75,0))
         self.desc_canvas.create_image(0, 0, anchor=tk.NW, image=self.desc_photo)
 
+        # Formátování textu
         if len(predicted_class_label.split()) == 2:
             predicted_class_label = predicted_class_label.split()[0] + "\n" + predicted_class_label.split()[1]
         if len(predicted_class_label.split()) == 3:
@@ -259,26 +311,31 @@ class ImageClassifierApp:
         self.sport_desc_lbl.grid(row=0, column=1, sticky=tk.N, pady=(520,0), padx=(25, 0))
 
     def change_cursor(self, event):
+        #nastaví kurzor na ruku
         self.button_canvas.config(cursor="hand2")
 
     def restore_cursor(self, event):
+        # Resetuje kurzor
         self.button_canvas.config(cursor="")
 
-    def load_model(self):
+    def model_load(self):
+        # Načtení modelů strojového učení
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
         self.model = tf.saved_model.load("./models/image_models/image_model/")
         self.text_model_cz = load_model('./models/text_models/text_model_cz')
-        self.text_model_en = load_model('./models/text_models/text_model_en')
+        #self.text_model_en = load_model('./models/text_models/text_model_en')
 
         if hasattr(self, 'setting_image_loaded'):
             self.classify_image(self.latest_image)
 
     def create_toggle_menu(self):
+        #načtení obrázku pro tlačítko menu
         menu_image=Image.open(self.toggle_menu_image)
         menu_img=menu_image.resize((50, 50))
         self.menu_photo=ImageTk.PhotoImage(menu_img)
 
+        #Vytvoření tlačítka pro otevření menu
         self.menu_btn_canvas = tk.Canvas(bg=self.primary_background, width=50, height=50, border=0, highlightthickness=0)
         self.menu_btn_canvas.grid(sticky=tk.NW, row=0, column=0, pady=(20,0), padx=(20,0))
         self.menu_btn_canvas.create_image(0, 0, anchor=tk.NW, image=self.menu_photo)
@@ -290,10 +347,12 @@ class ImageClassifierApp:
             items = ['Obrázková klasifikace', 'Textová klasifikace', 'Nastavení', 'Nápověda', 'O autorovi', 'O aplikaci']
         else:
             items = ['Image classification', 'Text classification', 'Settings', 'Help', 'About the author', 'About the app']
+
+        # Vytvoření menu
         self.opened_menu = tk.Frame(self.root, bg=self.sidebar_background, width=250, height=800)
         self.opened_menu.grid(row=0, column=0, sticky=tk.W)
 
-        self.opened_menu.grid_rowconfigure(0, weight=1)  # Keep the row at a fixed height
+        self.opened_menu.grid_rowconfigure(0, weight=1)
 
         close_menu_image = Image.open(self.close_menu_image)
         close_menu_img = close_menu_image.resize((50, 50))
@@ -306,7 +365,7 @@ class ImageClassifierApp:
         self.close_menu_btn_canvas.config(cursor="hand2")
 
         self.menu_item_labels = []
-
+        # Vytvoření položek menu
         for i, item_text in enumerate(items):
             menu_item = tk.Label(self.root, text=item_text, bg=self.sidebar_background, font=('Arial', 11, 'bold'), fg=self.sidebar_foreground)
             if i == 0:
@@ -321,6 +380,7 @@ class ImageClassifierApp:
             self.menu_item_labels.append(menu_item)
 
     def close_menu(self, event):
+        #zavře menu
         self.opened_menu.destroy()
         self.close_menu_btn_canvas.destroy()
         for menu_item in self.menu_item_labels:
@@ -328,9 +388,11 @@ class ImageClassifierApp:
         self.menu_item_labels = []
     
     def switch_ui(self, ui_name):
+        # Zničí ostatní atributy v aplikaci 
         for child in root.winfo_children():
             child.destroy()
 
+        # Vytvoří nové uživatelské rozhraní podle vybrání v menu
         if ui_name == 'Obrázková klasifikace' or ui_name == 'Image classification':
             self.create_image_ui()
         elif ui_name == 'Textová klasifikace' or ui_name == 'Text classification':
@@ -345,13 +407,16 @@ class ImageClassifierApp:
             self.create_settings_ui()
 
     def on_focus(self, event):
+        # Nastaví větší okraj textového pole při kliknutí
         self.text_field.config(border=10)
         self.text_field.delete('1.0', 'end')
 
     def on_focus_out(self, event):
+        # Nastaví menší okraj textového pole při kliknutí mimo něj
         self.text_field.config(border=1)
     
     def switch_text_model(self):
+        # Přepne jazyk textového modelu
         parser = ConfigParser()
         parser.read('./config.ini')
         if self.text_model_lang == 'cz':
@@ -366,29 +431,36 @@ class ImageClassifierApp:
         else:
             print('přepnuto na anglický režim')
         self.create_text_ui()
-
+    
     def create_text_ui(self):
+        # Načtení nastavení
         self.get_settings()
+        # Seznam názvů sportů
         self.class_names = ["lukostřelba", "baseball", "basketbal", "kulečník", "bmx", "bowling", "box", "jízda na býku", "roztleskávání", "curling", "šerm", "krasobruslení", "americký fotbal", "závody formule 1", "golf", "skok do výšky", "hokej", "dostihy", "závody hydroplánů", "judo", "motocyklové závody", "pole dance", "rugby", "skoky na lyžích", "snowboarding", "rychlobruslení", "surfování", "plavání", "stolní tenis", "tenis", "dráhové kolo", "volejbal", "vzpírání"]
         self.en_class_names = ["archery", "baseball", "basketball", "billiards", "bmx", "bowling", "boxing", "bull riding", "cheerleading", "curling", "fencing", "figure skating", "football", "formula 1 racing", "golf", "high jump", "hockey", "horse racing", "hydroplane racing", "judo", "motorcycle racing", "pole dance", "rugby", "ski jumping", "snow boarding", "speed skating", "surfing", "swimming", "table tennis", "tennis", "track cycling", "volleyball", "weightlifting"]
+    
         if self.language == 'cz':
             disc = ['Popiš sport', 'Odeslat', 'Nastav jazyk textového modelu']
         else:
             disc = ['Describe the sport', 'Submit', 'Set the language of the text model']
+        # Vytvoření hlavního rámečku
         self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1050, height=800)
         self.grey_frame.grid(row=0, column=0)
 
+        # Vytvoření vedlejšího rámečku
         self.blue_frame = tk.Frame(self.root, bg=self.secondary_background, width=450, height=800)
         self.blue_frame.grid(row=0, column=1)
 
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
 
+        # Zavře menu
         self.create_toggle_menu()
 
-        self.language_switch_lbl = tk.Label(text=disc[2], bg=self.primary_background, font=('Arial', 12), fg=self.primary_foreground)
+        '''self.language_switch_lbl = tk.Label(text=disc[2], bg=self.primary_background, font=('Arial', 12), fg=self.primary_foreground)
         self.language_switch_lbl.grid(row=0, column=1, sticky=tk.N, pady=(20,0), padx=(0,0))
         
+        # Tlačítka na změnu jazyka modelu
         if self.text_model_lang == 'cz':
             self.language_switch_btn = tk.Button(text='CZ', command=self.switch_text_model, font=('Arial', 12), fg=self.primary_foreground, bg=self.primary_background, border=0)
         else:
@@ -396,7 +468,8 @@ class ImageClassifierApp:
 
         self.language_switch_btn.grid(row=0, column=1, sticky=tk.N, pady=(55,0), padx=(0,0))
         self.language_switch_btn.config(cursor="hand2")
-
+        '''
+        # Vytvoření textového pole
         self.text_field = tk.Text(width=35, height=10, font=('Arial', 10), border=3, bg=self.secondary_background, fg=self.secondary_foreground, insertbackground=self.secondary_foreground)
         self.text_field.grid(sticky=tk.N, row=0, column=1, pady=(90,0))
         self.text_field.insert(tk.END, disc[0])
@@ -419,22 +492,30 @@ class ImageClassifierApp:
         self.submit_btn.config(cursor="hand2")
     
     def classify_text(self):
+        # Vezme text z textového pole
         self.input = self.text_field.get("1.0", 'end-1c')
         print(self.input)
+        # Načte encodery otřebné pro klasifikaci
         with open('./ai_text/tokenizer.pickle', 'rb') as handle:
             tokenizer = pickle.load(handle)
         with open('./ai_text/encoder.pickle', 'rb') as handle:
             encoder = pickle.load(handle)
             string = preprocess_text(self.input)
+        # Převede text na sekvenci
         sequences = tokenizer.texts_to_sequences([string])
+        # Připravuje text na základě jazyka
         if self.text_model_lang == 'en':
             data = pad_sequences(sequences, maxlen=38)
         else:
             data = pad_sequences(sequences, maxlen=28)
+
+        # Klasifikuje text na záklaě jazyka
         if self.text_model_lang == 'cz':
             predictions = self.text_model_cz.predict(data)
         else:
             predictions = self.text_model_en.predict(data)
+        
+        # Převede predikce na názvy sportů
         predicted_labels = predictions.argmax(axis=-1)
         predicted_labels = encoder.inverse_transform(predicted_labels)
         predicted_confidence = predictions.max(axis=-1)
@@ -450,6 +531,7 @@ class ImageClassifierApp:
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
 
+        # Vytvoření vizuálních efektů a ostatních věcí
         self.pieCanvas = tk.Canvas(bg=self.secondary_background, width=296, height=296, border=0, highlightthickness=0)
         self.pieCanvas.grid(sticky=tk.NE, row=0, column=1, pady=(360,0), padx=(0, 27))
 
@@ -507,6 +589,7 @@ class ImageClassifierApp:
         self.sport_desc_lbl.grid(row=0, column=1, sticky=tk.N, pady=(520,0), padx=(25, 0))
 
     def get_random_picture(self, sport):
+        # Načte náhodný obrázek sportu
         randomint = random.randint(1, 5) 
         sport_img = Image.open('./data/test/'+sport+'/'+str(randomint)+'.jpg')
         max_width = 850
@@ -519,13 +602,14 @@ class ImageClassifierApp:
         new_height = int(height * scale_factor)
         sport_img = sport_img.resize((new_width, new_height))
         self.sport_photo = ImageTk.PhotoImage(sport_img)
-
+        
+        # Zobrazí obrázek
         self.label = tk.Label(image=self.sport_photo)
         self.label.image = self.sport_photo
         self.label.grid(row=0, column=0)
 
-
     def create_about_ui(self):
+        # Vytvoří slovníky
         if self.language == 'cz':
             self.class_names = ["lukostřelba", "baseball", "basketbal", "kulečník", "bmx", "bowling", "box", "jízda na býku", "roztleskávání", "curling", "šerm", "krasobruslení", "americký fotbal", "závody formule 1", "golf", "skok do výšky", "hokej", "dostihy", "závody hydroplánů", "judo", "motocyklové závody", "pole dance", "rugby", "skoky na lyžích", "snowboarding", "rychlobruslení", "surfování", "plavání", "stolní tenis", "tenis", "dráhové kolo", "volejbal", "vzpírání"]
             dic = [
@@ -541,6 +625,7 @@ class ImageClassifierApp:
                 "The models are currently capable of recognising 33 sports, which can be found on the right-hand side of this screen. More precise documentation on the models can be found in the source code of the application or in my graduation thesis"
             ]
         
+        # Zobrazení rámečků a textů
         self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1050, height=800)
         self.grey_frame.grid(row=0, column=0)
 
@@ -562,6 +647,7 @@ class ImageClassifierApp:
 
         self.sport_item_labels = []
 
+        # Vytvoření seznamu sportů v aplikaci
         for i, item in enumerate(self.class_names):
             sport_item = tk.Label(self.root, text=item, bg=self.secondary_background, fg=self.secondary_foreground, font=('Arial', 11, 'bold'))
             sport_item.grid(row=0, column=1, sticky=tk.NW, pady=(23*(i+1), 0), padx=(40, 0))
@@ -569,22 +655,21 @@ class ImageClassifierApp:
             self.sport_item_labels.append(sport_item)
 
     def create_me_ui(self):
+        # Vytvoření slovníku
         if self.language == 'cz':
             dic = ['O autorovi']
         else:
             dic = ['About the author']
 
-        self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1050, height=800)
+        self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1500, height=800)
         self.grey_frame.grid(row=0, column=0)
-
-        self.blue_frame = tk.Frame(self.root, bg=self.secondary_background, width=450, height=800)
-        self.blue_frame.grid(row=0, column=1)
 
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
 
         self.create_toggle_menu()
 
+        # Zobrazení textu
         lbl = tk.Label(text=dic[0], font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
         lbl.grid(row=0, column=0, sticky=tk.N, pady=(20,0))
 
@@ -596,7 +681,33 @@ class ImageClassifierApp:
         text1 = tk.Label(text="", bg=self.primary_background, font=('Arial', 12), wraplength=700, justify=tk.LEFT)
         text1.grid(row=0, column=0, sticky=tk.N, pady=(250,0))
 
+        youngphoto_img = Image.open('./components/malycacak.jpg')
+        youngphoto_img = youngphoto_img.resize((400,320))
+        self.youngphoto_photo = ImageTk.PhotoImage(youngphoto_img)
+        # Zobrazí obrázek
+        self.label1 = tk.Label(image=self.youngphoto_photo)
+        self.label1.image = self.youngphoto_photo
+        self.label1.grid(row=0, column=0, sticky=tk.SW, pady=(0, 50), padx=(50,0))
+
+        olderphoto_img = Image.open('./components/strednicacak.jpg')
+        olderphoto_img = olderphoto_img.resize((480,320))
+        self.olderphoto_photo = ImageTk.PhotoImage(olderphoto_img)
+        # Zobrazí obrázek
+        self.label2 = tk.Label(image=self.olderphoto_photo)
+        self.label2.image = self.olderphoto_photo
+        self.label2.grid(row=0, column=0, sticky=tk.S, pady=(0, 50), padx=(0, 80))
+
+        bigphoto_img = Image.open('./components/velkycacak.jpg')
+        bigphoto_img = bigphoto_img.resize((480,320))
+        self.bigphoto_photo = ImageTk.PhotoImage(bigphoto_img)
+        # Zobrazí obrázek
+        self.label2 = tk.Label(image=self.bigphoto_photo)
+        self.label2.image = self.bigphoto_photo
+        self.label2.grid(row=0, column=0, sticky=tk.SE, pady=(0, 50), padx=(0,50))
+
+
     def create_help_ui(self):
+        # Vytvoření slovníku
         if self.language == 'cz':
             dic = ['Nápověda', 'Obrázkový model', 'Textový model']
         else:
@@ -610,6 +721,7 @@ class ImageClassifierApp:
 
         self.create_toggle_menu()
 
+        # Zobrazení textů
         lbl = tk.Label(text=dic[0], font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
         lbl.grid(row=0, column=0, sticky=tk.N, pady=(20,0))
         lbl_image_model = tk.Label(text=dic[1], bg=self.primary_background, fg=self.primary_foreground, font=('Arial', 14), wraplength=700, justify=tk.LEFT)
@@ -635,6 +747,7 @@ class ImageClassifierApp:
     def create_settings_ui(self):
         self.grey_frame = tk.Frame(self.root, bg=self.primary_background, width=1500, height=800)
         self.grey_frame.grid(row=0, column=0)
+        # Vytvoření slovníku
         if self.language == 'cz':
             dic = ['Nastavení', 'Tmavý režim', 'Jazyk']
         else:
@@ -645,7 +758,7 @@ class ImageClassifierApp:
 
         self.create_toggle_menu()
 
-        #OBRAZOVKA
+        # Nastavení tlačítka pro změnu režimu (tmavý/světlý)
         lbl = tk.Label(text=dic[0], font=('Arial', 20, 'bold'), bg=self.primary_background, fg="#53af32")
         lbl.grid(row=0, column=0, sticky=tk.N, pady=(20,0))
 
@@ -659,7 +772,7 @@ class ImageClassifierApp:
 
         self.mode_switch_btn.grid(row=0, column=0, sticky=tk.N, pady=(100,0), padx=(140,0))
 
-        #JAZYK
+        # Nastavení tlačítka pro změnu jazyka
         self.language_switch_lbl = tk.Label(text=dic[2], bg=self.primary_background, font=('Arial', 12), fg=self.primary_foreground)
         self.language_switch_lbl.grid(row=0, column=0, sticky=tk.N, pady=(160,0), padx=(0,70))
         
@@ -671,10 +784,12 @@ class ImageClassifierApp:
         self.language_switch_btn.grid(row=0, column=0, sticky=tk.N, pady=(160,0), padx=(140,0))
 
     def switch_mode(self):
+        # Přepne varevný režim aplikace
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
         parser = ConfigParser()
         parser.read('./config.ini')
+        # Uloží režim do nastavení
         if parser.get('options', 'primary_background') == 'white':
             self.dark_mode(parser)
         else:
@@ -684,10 +799,12 @@ class ImageClassifierApp:
         self.switch_ui('Nastavení')
 
     def switch_language(self):
+        # Přepne jazyk aplikace
         script_directory = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_directory)
         parser = ConfigParser()
         parser.read('./config.ini')
+        # Uloží jazyk do nastavení
         if self.language == 'cz':
             self.en_language(parser)
         else:
@@ -697,6 +814,7 @@ class ImageClassifierApp:
         self.switch_ui('Nastavení')
 
     def cz_language(self, parser):
+        # Nastavení českého jazyka
         parser['options']['language'] = 'cz'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
@@ -709,6 +827,7 @@ class ImageClassifierApp:
                 parser.write(configfile)
         
     def en_language(self, parser):
+        # Nastavení anglického jazyka
         parser['options']['language'] = 'en'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
@@ -721,6 +840,7 @@ class ImageClassifierApp:
                 parser.write(configfile)
 
     def dark_mode(self, parser):
+        # Nastavení tmavého režimu
         parser['options']['primary_background'] = 'black'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
@@ -753,6 +873,7 @@ class ImageClassifierApp:
             parser.write(configfile)
 
     def light_mode(self, parser):
+        # Nastavení světlého režimu
         parser['options']['primary_background'] = 'white'
         with open('./config.ini', 'w') as configfile:
             parser.write(configfile)
@@ -788,5 +909,5 @@ if __name__ == "__main__":
     ctypes.windll.shcore.SetProcessDpiAwareness(True)
     root = tk.Tk()
     app = ImageClassifierApp(root)
-    app.load_model()
+    app.model_load()
     root.mainloop()
