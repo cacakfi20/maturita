@@ -1,8 +1,7 @@
 import unidecode
 import re
 
-#stop_words = set("a, aby, aj, ale, anebo, ani, aniz, ano, asi, avska, az, ba, bez, bude, budem, budes, by, byl, byla, byli, bylo, byt, ci, clanek, clanku, clanky, co, com, coz, cz, dalsi, design, dnes, do, email, ho, i, jak, jake, jako, je, jeho, jej, jeji, jejich, jen, jeste, jenz, ji, jine, jiz, jsem, jses, jsi, jsme, jsou, jste, k, kam, kde, kdo, kdyz, ke, ktera, ktere, kteri, kterou, ktery, ku, ma, mate, me, mezi, mi, mit, mne, mnou, muj, muze, my, na, nad, nam, napiste, nas, nasi, ne, nebo, nebot, necht, nejsou, není, neni, net, nez, ni, nic, nove, novy, nybrz, o, od, ode, on, org, pak, po, pod, podle, pokud, pouze, prave, pred, pres, pri, pro, proc, proto, protoze, prvni, pta, re, s, se, si, sice, spol, strana, sve, svuj, svych, svym, svymi, ta, tak, take, takze, tamhle, tato, tedy, tema, te, ten, tedy, tento, teto, tim , timto, tipy, to, tohle, toho, tohoto, tom, tomto, tomuto, totiz, tu, tudiz, tuto, tvuj, ty, tyto, u, uz, v, vam, vas, vas, vase, ve, vedle, vice, vsak, vsechen, vy, vzdyt, z, za, zda, zde, ze, zpet, zpravy, mesto, dekuji, dobry, den".split(", "))
-stop_words = set("d")
+stop_words = set("a, aby, aj, ale, anebo, ani, aniz, ano, asi, avska, az, ba, bez, bude, budem, budes, by, byl, byla, byli, bylo, byt, ci, clanek, clanku, clanky, co, com, coz, cz, dalsi, design, dnes, do, email, ho, i, jak, jake, jako, je, jeho, jej, jeji, jejich, jen, jeste, jenz, ji, jine, jiz, jsem, jses, jsi, jsme, jsou, jste, k, kam, kde, kdo, kdyz, ke, ktera, ktere, kteri, kterou, ktery, ku, ma, mate, me, mezi, mi, mit, mne, mnou, muj, muze, my, na, nad, nam, napiste, nas, nasi, ne, nebo, nebot, necht, nejsou, není, neni, net, nez, ni, nic, nove, novy, nybrz, o, od, ode, on, org, pak, po, pod, podle, pokud, pouze, prave, pred, pres, pri, pro, proc, proto, protoze, prvni, pta, re, s, se, si, sice, spol, strana, sve, svuj, svych, svym, svymi, ta, tak, take, takze, tamhle, tato, tedy, tema, te, ten, tedy, tento, teto, tim , timto, tipy, to, tohle, toho, tohoto, tom, tomto, tomuto, totiz, tu, tudiz, tuto, tvuj, ty, tyto, u, uz, v, vam, vas, vas, vase, ve, vedle, vice, vsak, vsechen, vy, vzdyt, z, za, zda, zde, ze, zpet, zpravy, mesto, dekuji, dobry, den".split(", "))
 
 def preprocess_text(words):
     # conversion to lower case
@@ -13,28 +12,28 @@ def preprocess_text(words):
     words = re.sub(r'\W+', ' ', words)
     # delete stop-slov
     words = remove_stopwords(words)
-    #words = remove_short_words(words)
+    words = remove_short_words(words)
 
     return words
 
 def remove_stopwords(text):
 
-    # Split the string into a list of words 
+    # Rozdělí string na list slov
     words = text.split() 
 
-    # Create a new list to hold the filtered words 
+    # Vytvoření nového listu na filtrovaná slova
     filtered_words = [] 
 
-    # Iterate over the list of words 
+    # Iterace přes list slov
     for word in words: 
-        # If the word is not in the stop word list, add it to the filtered list 
+        # pokud slovo není v stop word listu, pridej ho do filtrovaneho listu 
         if word not in stop_words: 
             filtered_words.append(word) 
 
-    # Output: ['quick', 'brown', 'fox', 'jumps', 'lazy', 'dog.']
+    # Vystup: ['sport', 'strili', 'mic', 'kos']
     return ' '.join(filtered_words)
 
-def remove_short_words(text, min_length=3):
+def remove_short_words(text, min_length=2):
 
     # Split the string into a list of words 
     words = text.split() 
