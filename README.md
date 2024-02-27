@@ -4,7 +4,7 @@
 
 - **Název aplikace:** Sport Snap Shot
 - **Technologie:** Python, Tensorflow
-- **Zakázka:** Maturitní práce
+- **Projekt:** Maturitní práce
 
 Vedoucí práce
 - **Jméno:** Ing. Přemysl Vaculík
