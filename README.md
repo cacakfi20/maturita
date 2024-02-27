@@ -7,7 +7,7 @@
 - **Zakázka:** Maturitní práce
 
 Vedoucí práce
-- **Jméno:**  Přemysl Vaculík
+- **Jméno:** Ing. Přemysl Vaculík
 
 Vývoj
 - **Jméno:**  Filip Cacák
